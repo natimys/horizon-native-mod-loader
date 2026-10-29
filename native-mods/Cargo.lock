@@ -24,9 +24,11 @@ dependencies = [
 name = "horizon-native-pack"
 version = "0.1.0"
 dependencies = [
+ "horizon-native-api",
  "horizon-native-companion-mod",
  "horizon-native-hello-mod",
  "horizon-native-runtime",
+ "horizon-native-workshop-mod",
 ]
 
 [[package]]
@@ -42,4 +44,11 @@ version = "0.1.0"
 dependencies = [
  "horizon-native-api",
  "horizon-native-runtime",
+]
+
+[[package]]
+name = "horizon-native-workshop-mod"
+version = "0.1.0"
+dependencies = [
+ "horizon-native-api",
 ]

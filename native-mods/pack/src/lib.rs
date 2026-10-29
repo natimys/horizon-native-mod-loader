@@ -14,5 +14,11 @@ pub fn create_for_side(side: HostSide) -> Result<Runtime, LoaderError> {
         mods.push(horizon_native_companion_mod::create());
         mods
     };
+    #[cfg(feature = "gameplay-example")]
+    let mods = {
+        let mut mods = mods;
+        mods.push(horizon_native_workshop_mod::create());
+        mods
+    };
     Runtime::for_side(mods, side)
 }

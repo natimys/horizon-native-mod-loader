@@ -27,6 +27,7 @@ fn zero_mod_lifecycle_has_no_actions_or_callbacks() {
     assert_eq!(
         create_runtime().unwrap().metadata().len(),
         1 + usize::from(cfg!(feature = "test-pack"))
+            + usize::from(cfg!(feature = "gameplay-example"))
     );
 }
 
@@ -44,6 +45,7 @@ fn hello_declares_real_item_and_original_resources_before_setup() {
     assert_eq!(
         runtime.content().resources.len(),
         5 * (1 + usize::from(cfg!(feature = "test-pack")))
+            + 3 * usize::from(cfg!(feature = "gameplay-example"))
     );
     assert!(
         runtime.content().resources["assets/hello_mod/textures/item/token.png"]
@@ -63,10 +65,17 @@ fn acceptance_pack_has_two_independent_mods_and_stable_names_on_all_hosts() {
         runtime.freeze().unwrap();
         assert_eq!(
             runtime.metadata().map(|m| m.id).collect::<Vec<_>>(),
-            ["companion", "hello_mod"]
+            if cfg!(feature = "gameplay-example") {
+                vec!["companion", "hello_mod", "workshop"]
+            } else {
+                vec!["companion", "hello_mod"]
+            }
         );
         assert_eq!(runtime.content().items.len(), 2);
-        assert_eq!(runtime.content().tabs.len(), 2);
+        assert_eq!(
+            runtime.content().tabs.len(),
+            2 + usize::from(cfg!(feature = "gameplay-example"))
+        );
         runtime.initialize().unwrap();
         assert!(runtime.shutdown().errors.is_empty());
     }

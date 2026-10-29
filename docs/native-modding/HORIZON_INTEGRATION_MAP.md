@@ -399,3 +399,39 @@ Cross-dimension writes wait for that dimension's pass; bounded queues fail-stop
 on overflow. Mods receive no engine objects. Native binary tests: 159 PASS,
 3 upstream ignored; native gameplay runtime tests: 2 PASS. Actual scenario
 acceptance is still pending; these checks alone do not close phase 3.
+
+Milestones 4–5 implemented: commands reuse the resource command report
+(`native_content::resource_root`) and existing chat/guest entrypoints; namespaced
+zero-argument command dispatch is owner-only and server-only. No Hub command-tree
+or WASM runtime edits were needed. Extension storage uses generic
+`BlockEntity::Extension`, non-container views, save encode/decode, existing
+ChunkEncoder type lookup and remote entity updates. `World::set` removes the
+payload on replacement (initial entities require single-state blocks). New
+registry mapping `horizon:extension_block_entity` maps block name -> registered
+entity type number; both maps are covered by the required static identity.
+Native API exposes versioned <=64 integer fields, owned entity snapshots and
+queued writes with owner/schema/position validation. Existing `place_state` and
+successful player placement initialize data; loaded typed entities retain it.
+`native_gameplay` ticks entities sorted by position after world snapshots.
+
+Exact additional engine entries / alternatives / tests:
+- `containers::{id,contents,slots,slots_mut}` and Game's two container UI matches:
+  generic entities carry no inventory. Alternative fake vanilla container would
+  corrupt semantics. Initial library checks passed but the full binary check
+  exposed two missing exhaustive UI arms; corrected separately in 29914d025.
+- `World::set`: remove extension data immediately on block replacement, avoiding
+  resurrection during break+place in one tick. Dedicated removal test PASS.
+- `save::{encode_block_entity,decode_block_entity}`: persist stable type name,
+  version and integer data within ordinary chunk block_entities. Codec test PASS.
+- `lan/chunks::{ChunkEncoder::new,entity_tag}`: existing registry table and packet
+  payload, avoiding a parallel protocol. Registered type/update-tag test PASS.
+- `game/remote::remote_block_entity_data`: accept registered extension updates
+  even when no old entity exists, after block/type mapping check. Needed for live
+  placements; initial chunk uses the same existing decoder.
+- `native_content::resource_root`: validate single-state blocks and append type
+  mappings before digest. Synthetic native block/type table test added.
+- `game/commands::place_state`: initialize registered data after checked writes;
+  public action adapter cannot create engine entities without this host boundary.
+
+These are generic storage/adapter contracts; no concrete gameplay mod is imported
+by Horizon. Real save/late-join/update acceptance remains pending until recorded.
