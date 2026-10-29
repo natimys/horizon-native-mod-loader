@@ -369,3 +369,11 @@ Candidate engine insertion ledger (proposals until implementation is recorded):
 
 No mutable settings, Creative capacity expansion, dynamic models, runtime ID
 remapping, Create work or changes to vanilla gameplay rules are planned.
+
+Phase 3 milestone 1 implemented: `BlockDescriptor`, `register_block`, frozen
+`ContentSnapshot::blocks`; duplicate block/item IDs and tab references validated
+before setup on all three host sides. Engine edit is limited to
+`native_content::{validate,resource_root}`: generate existing block declarations,
+require real vanilla templates and own translations, include blocks in identity.
+Synthetic table test checks unchanged vanilla IDs, appended block/item mapping,
+translation alias and missing-template refusal. No world/save/renderer edit yet.

@@ -54,6 +54,15 @@ pub struct ItemDescriptor {
     pub template: ResourceId,
 }
 
+/// A statically registered block and its block item. The host resolves the
+/// vanilla template's states, shapes, mining facts and static models.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BlockDescriptor {
+    pub id: ResourceId,
+    pub translation_key: String,
+    pub template: ResourceId,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CreativeTabDescriptor {
     pub id: ResourceId,
@@ -70,6 +79,7 @@ pub struct CreativeTabDescriptor {
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct ContentSnapshot {
     pub items: BTreeMap<ResourceId, ItemDescriptor>,
+    pub blocks: BTreeMap<ResourceId, BlockDescriptor>,
     pub tabs: BTreeMap<ResourceId, CreativeTabDescriptor>,
     /// Original embedded resource files, ordered by their canonical path.
     pub resources: BTreeMap<String, Vec<u8>>,

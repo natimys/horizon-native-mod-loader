@@ -8,11 +8,12 @@ pub(super) fn collect(
     let owner = metadata.id;
     let horizon_native_api::ContentDeclarations {
         items,
+        blocks,
         tabs,
         resources,
     } = context.into_declarations();
     if metadata.side != horizon_native_api::ModSide::Common
-        && (!items.is_empty() || !tabs.is_empty() || !resources.is_empty())
+        && (!items.is_empty() || !blocks.is_empty() || !tabs.is_empty() || !resources.is_empty())
     {
         return Err(format!("{owner}: persistent content requires a common mod"));
     }
@@ -52,8 +53,15 @@ pub(super) fn collect(
     for item in items {
         check(&item.id, &item.translation_key)?;
         let id = item.id.clone();
-        if content.items.insert(id.clone(), item).is_some() {
+        if content.blocks.contains_key(&id) || content.items.insert(id.clone(), item).is_some() {
             return Err(format!("duplicate item ID {id}"));
+        }
+    }
+    for block in blocks {
+        check(&block.id, &block.translation_key)?;
+        let id = block.id.clone();
+        if content.items.contains_key(&id) || content.blocks.insert(id.clone(), block).is_some() {
+            return Err(format!("duplicate block/item ID {id}"));
         }
     }
     for tab in tabs {
@@ -74,7 +82,8 @@ pub(super) fn validate<'a>(
     for tab in content.tabs.values() {
         let owner = tab.id.namespace();
         for item in std::iter::once(&tab.icon).chain(&tab.items) {
-            let problem = if !content.items.contains_key(item) {
+            let problem = if !content.items.contains_key(item) && !content.blocks.contains_key(item)
+            {
                 Some(format!("tab {} references missing item {item}", tab.id))
             } else if item.namespace() != owner
                 && !mods[owner]

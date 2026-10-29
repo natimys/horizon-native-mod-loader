@@ -2,7 +2,9 @@
 #![forbid(unsafe_code)]
 
 mod content;
-pub use content::{ContentSnapshot, CreativeTabDescriptor, ItemDescriptor, ResourceId};
+pub use content::{
+    BlockDescriptor, ContentSnapshot, CreativeTabDescriptor, ItemDescriptor, ResourceId,
+};
 use std::sync::Arc;
 
 pub const API_VERSION: u32 = 1;
@@ -47,6 +49,7 @@ pub fn valid_mod_id(id: &str) -> bool {
 pub struct LoadContext {
     tick: bool,
     items: Vec<ItemDescriptor>,
+    blocks: Vec<BlockDescriptor>,
     tabs: Vec<CreativeTabDescriptor>,
     resources: Vec<(String, Vec<u8>)>,
 }
@@ -62,6 +65,10 @@ impl LoadContext {
 
     pub fn register_item(&mut self, item: ItemDescriptor) {
         self.items.push(item);
+    }
+
+    pub fn register_block(&mut self, block: BlockDescriptor) {
+        self.blocks.push(block);
     }
 
     pub fn register_tab(&mut self, tab: CreativeTabDescriptor) {
@@ -84,6 +91,7 @@ impl LoadContext {
     pub fn into_declarations(self) -> ContentDeclarations {
         ContentDeclarations {
             items: self.items,
+            blocks: self.blocks,
             tabs: self.tabs,
             resources: self.resources,
         }
@@ -93,6 +101,7 @@ impl LoadContext {
 /// Unpublished registration batch, consumed only by the runtime.
 pub struct ContentDeclarations {
     pub items: Vec<ItemDescriptor>,
+    pub blocks: Vec<BlockDescriptor>,
     pub tabs: Vec<CreativeTabDescriptor>,
     pub resources: Vec<(String, Vec<u8>)>,
 }
