@@ -314,3 +314,58 @@ item model trees and creative pagination still require independent API proposals
 Final engine range for this stage: `30cc874de`–`fd7316fd1` inclusive. Native API,
 examples/composition and documentation commits live in the outer repository;
 VALIDATION.md records the stage ranges. Existing untracked user files are preserved.
+
+## Phase 3 audit and bounded implementation plan — 2026-10-30
+
+Phase 2 baseline reviewed: outer bf77a3a, Horizon fd7316fd1. Horizon working
+ tree is clean; outer untracked .agents/, .codex/, README-SETUP.md and
+horizon_official_server.txt are pre-existing user files. `gh pr list --repo
+horizon-rust/horizon --state open --search 'native mod'` failed (network access).
+No upstream API is inferred from the online branch.
+
+Observed locally:
+- `mod_content::Plan`, `build`, `resource_root` already clone vanilla block
+  states/facts/models/items and append protocol/command tables. Native blocks
+  should translate to the existing `data/<owner>/horizon/block/` format.
+- `crafting::Recipes::load/find` loads namespaced recipes from ordinary data
+  overlays. The initial public recipe contract can be bounded shapeless recipes
+  of explicit item IDs, using this loader and the existing crafting execution.
+- `Game::tick` dispatches existing WASM server events before local simulation;
+  remote windows return through `tick_remote` first. `levels::tick_server`
+  selects each dimension; `as_guest` supplies the acting guest. Player block
+  events already have precise post-success callsites in `break_block/use_item`.
+- `server_mods.rs` is WASM-feature conditional and must retain its semantics.
+  `native_hooks.rs` belongs to the separate source-mixin system: do not edit it.
+- `place_state` is the existing checked authoritative write (neighbours, light,
+  tracking, containers). Native actions must use it after callbacks, never raw
+  world writes. `lan::Hub::set_mod_commands` already merges command reports.
+- `Chunk::block_entities`, `BlockEntity`, save encode/decode and chunk/update
+  packets carry typed entities. A generic extension payload can reuse these;
+  no second world save or custom network protocol is required. Custom renderers,
+  menus, arbitrary NBT, machine/capability systems are outside this phase.
+- Static block/item/entity-type mappings are not vanilla dynamic registries.
+  Keep phase 2's exact KnownPack identity requirement, extend its digest to all
+  gameplay declarations; mismatches must disconnect before play.
+
+Independently testable milestones: (1) block descriptors/overlay; (2) explicit
+shapeless recipe descriptors/overlay; (3) subscribed owned player/world/block
+snapshots and bounded validated action batches, authoritative execution only;
+(4) namespaced zero-argument commands with existing command-tree transport;
+(5) generic versioned integer-field block entities with existing chunk save and
+packet transport; (6) optional API-only gameplay example, real client/in-frame/
+LAN/dedicated/save/reload/mismatch and no-native/WASM checks. Each completed
+milestone gets an atomic implementation commit and required tests.
+
+Candidate engine insertion ledger (proposals until implementation is recorded):
+
+| File / entry point | Reason | Alternative considered | Required check |
+|---|---|---|---|
+| `native_content.rs` | Translate block/recipe/entity descriptors and hash all registries | Separate loaders duplicate Plan/Recipes | Synthetic templates/collisions, actual crafting, stable names |
+| `game/native_api.rs`, new generic gameplay bridge | Snapshot/dispatch/action ownership and role guard | Mods cannot borrow private Game; WASM/mixin hooks stay separate | Order, failures, no client authority, two producers |
+| `game.rs::tick`, player block-event callsites; `levels.rs::tick_server` | Authoritative dispatch and dimension-aware actions | Public API alone cannot observe committed game operations | Integrated/in-frame/dedicated, normal block replication |
+| `game/chat.rs`, `game/lan_actions.rs`, existing command-tree adapter | Route registered native commands with collision checks | Calling chat parser from a mod bypasses API | Vanilla/WASM command preservation, matching LAN tree |
+| `chunk/block_entity.rs`, `save.rs` | Generic versioned extension payload in existing entity storage | Sidecar files break chunk lifetime/atomic persistence | Codec/reload/removal and vanilla tests |
+| `lan/chunks.rs`, `game/lan.rs`, `game/remote.rs` | Generic registered entity-type mapping and existing packet updates | New payload protocol unnecessary | Initial chunks + live update + late join |
+
+No mutable settings, Creative capacity expansion, dynamic models, runtime ID
+remapping, Create work or changes to vanilla gameplay rules are planned.
