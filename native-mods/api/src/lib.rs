@@ -4,8 +4,8 @@
 mod content;
 mod gameplay;
 pub use content::{
-    BlockDescriptor, CommandDescriptor, ContentSnapshot, CreativeTabDescriptor, ItemDescriptor,
-    RecipeDescriptor, ResourceId,
+    BlockDescriptor, BlockEntityDescriptor, CommandDescriptor, ContentSnapshot,
+    CreativeTabDescriptor, ItemDescriptor, RecipeDescriptor, ResourceId,
 };
 pub use gameplay::*;
 use std::sync::Arc;
@@ -56,6 +56,7 @@ pub struct LoadContext {
     blocks: Vec<BlockDescriptor>,
     recipes: Vec<RecipeDescriptor>,
     commands: Vec<CommandDescriptor>,
+    block_entities: Vec<BlockEntityDescriptor>,
     tabs: Vec<CreativeTabDescriptor>,
     resources: Vec<(String, Vec<u8>)>,
 }
@@ -92,6 +93,10 @@ impl LoadContext {
         self.commands.push(command);
     }
 
+    pub fn register_block_entity(&mut self, entity: BlockEntityDescriptor) {
+        self.block_entities.push(entity);
+    }
+
     pub fn register_tab(&mut self, tab: CreativeTabDescriptor) {
         self.tabs.push(tab);
     }
@@ -115,6 +120,7 @@ impl LoadContext {
             blocks: self.blocks,
             recipes: self.recipes,
             commands: self.commands,
+            block_entities: self.block_entities,
             tabs: self.tabs,
             resources: self.resources,
         }
@@ -127,6 +133,7 @@ pub struct ContentDeclarations {
     pub blocks: Vec<BlockDescriptor>,
     pub recipes: Vec<RecipeDescriptor>,
     pub commands: Vec<CommandDescriptor>,
+    pub block_entities: Vec<BlockEntityDescriptor>,
     pub tabs: Vec<CreativeTabDescriptor>,
     pub resources: Vec<(String, Vec<u8>)>,
 }

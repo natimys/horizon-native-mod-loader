@@ -25,6 +25,11 @@ pub enum GameplayEvent {
         world: WorldSnapshot,
         players: Vec<PlayerSnapshot>,
     },
+    /// Sorted by position within each authoritative dimension tick.
+    BlockEntityTick {
+        world: WorldSnapshot,
+        entity: BlockEntitySnapshot,
+    },
     /// Committed player breaking/placing only; queued writes do not recurse.
     BlockChanged {
         player: PlayerSnapshot,
@@ -39,6 +44,7 @@ pub struct GameplaySubscriptions {
     pub players: bool,
     pub world: bool,
     pub blocks: bool,
+    pub block_entities: bool,
 }
 impl GameplaySubscriptions {
     pub fn accepts(self, event: &GameplayEvent) -> bool {
@@ -46,15 +52,28 @@ impl GameplaySubscriptions {
             GameplayEvent::PlayerJoined(_) | GameplayEvent::PlayerLeft(_) => self.players,
             GameplayEvent::WorldTick { .. } => self.world,
             GameplayEvent::BlockChanged { .. } => self.blocks,
+            GameplayEvent::BlockEntityTick { .. } => self.block_entities,
         }
     }
     pub fn any(self) -> bool {
-        self.players || self.world || self.blocks
+        self.players || self.world || self.blocks || self.block_entities
     }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BlockEntitySnapshot {
+    pub id: ResourceId,
+    pub position: [i32; 3],
+    pub version: u32,
+    pub fields: std::collections::BTreeMap<String, i64>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum GameplayAction {
+    SetBlockEntity {
+        dimension: ResourceId,
+        entity: BlockEntitySnapshot,
+    },
     Tell {
         player: u128,
         text: String,
@@ -106,12 +125,21 @@ impl GameplayContext {
             state: state.into(),
         });
     }
+    pub fn set_block_entity(&mut self, dimension: ResourceId, entity: BlockEntitySnapshot) {
+        self.actions
+            .push(GameplayAction::SetBlockEntity { dimension, entity });
+    }
     pub fn finish(self) -> Result<Vec<GameplayAction>, String> {
         if self.actions.len() > MAX_EVENT_ACTIONS {
             return Err("gameplay action batch exceeds 256 actions".into());
         }
         for action in &self.actions {
             match action {
+                GameplayAction::SetBlockEntity { entity, .. }
+                    if entity.fields.len() > 64 || entity.version == 0 =>
+                {
+                    return Err("invalid block entity action".into());
+                }
                 GameplayAction::Tell { text, .. } if text.len() > 4096 => {
                     return Err("gameplay message exceeds 4096 bytes".into())
                 }

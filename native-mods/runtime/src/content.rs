@@ -11,6 +11,7 @@ pub(super) fn collect(
         blocks,
         recipes,
         commands,
+        block_entities,
         tabs,
         resources,
     } = context.into_declarations();
@@ -19,6 +20,7 @@ pub(super) fn collect(
             || !blocks.is_empty()
             || !recipes.is_empty()
             || !commands.is_empty()
+            || !block_entities.is_empty()
             || !tabs.is_empty()
             || !resources.is_empty())
     {
@@ -98,6 +100,38 @@ pub(super) fn collect(
             return Err(format!("duplicate command ID {id}"));
         }
     }
+    for entity in block_entities {
+        check(&entity.id, "block entity")?;
+        if entity.version == 0
+            || entity.fields.len() > 64
+            || entity.fields.keys().any(|key| {
+                key.is_empty()
+                    || key.len() > 64
+                    || !key
+                        .bytes()
+                        .all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b"_-".contains(&b))
+            })
+        {
+            return Err(format!(
+                "{}: invalid block entity version/fields",
+                entity.id
+            ));
+        }
+        if entity.block.namespace() != owner {
+            return Err(format!("{}: block entity must own its block", entity.id));
+        }
+        if content
+            .block_entities
+            .values()
+            .any(|e| e.block == entity.block)
+        {
+            return Err(format!("duplicate block entity for {}", entity.block));
+        }
+        let id = entity.id.clone();
+        if content.block_entities.insert(id.clone(), entity).is_some() {
+            return Err(format!("duplicate block entity ID {id}"));
+        }
+    }
     for tab in tabs {
         check(&tab.id, &tab.translation_key)?;
         let id = tab.id.clone();
@@ -167,6 +201,14 @@ pub(super) fn validate<'a>(
                     ),
                 ));
             }
+        }
+    }
+    for entity in content.block_entities.values() {
+        if !content.blocks.contains_key(&entity.block) {
+            return Err((
+                entity.id.namespace().into(),
+                format!("{}: missing registered block {}", entity.id, entity.block),
+            ));
         }
     }
     Ok(())

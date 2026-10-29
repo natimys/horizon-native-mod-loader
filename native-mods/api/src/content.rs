@@ -90,6 +90,16 @@ pub struct CommandDescriptor {
     pub id: ResourceId,
 }
 
+/// Versioned data on a registered single-state block. Integer fields are owned
+/// by the declaring mod. No inventories, NBT handles, renderer or machine API.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BlockEntityDescriptor {
+    pub id: ResourceId,
+    pub block: ResourceId,
+    pub version: u32,
+    pub fields: BTreeMap<String, i64>,
+}
+
 /// Runtime publishes one snapshot after validating every declaration.
 /// Callbacks can read it via `ModContext`, never mutate the runtime's registry.
 /// Maps iterate by stable resource name; item and tab namespaces are separate.
@@ -99,6 +109,7 @@ pub struct ContentSnapshot {
     pub blocks: BTreeMap<ResourceId, BlockDescriptor>,
     pub recipes: BTreeMap<ResourceId, RecipeDescriptor>,
     pub commands: BTreeMap<ResourceId, CommandDescriptor>,
+    pub block_entities: BTreeMap<ResourceId, BlockEntityDescriptor>,
     pub tabs: BTreeMap<ResourceId, CreativeTabDescriptor>,
     /// Original embedded resource files, ordered by their canonical path.
     pub resources: BTreeMap<String, Vec<u8>>,
