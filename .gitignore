@@ -1,0 +1,11 @@
+# Independently versioned engine and private local resources.
+/horizon/
+/game-resources/
+/.aws/
+
+# Generated builds, prepared resources and local caches.
+target/
+.local/
+.horizon-cache/
+*.log
+*.tmp
