@@ -6,7 +6,7 @@ Each phase ends with working code + tests + a brief audit of changed engine line
 
 - Phase 0: local source audit and insertion ledger written in `HORIZON_INTEGRATION_MAP.md`.
 - Phase 1: **gate CLOSED / PASS** against the mandatory Horizon regression/API criteria below. See `VALIDATION.md` for the evidence matrix. Full Minecraft Java parity is optional.
-- Phase 2: **STARTED**, standalone item/tab registration and global freeze implemented and tested with two API-only test mods. Complete compiled catalog and read-only adapter are integrated into the existing Horizon Mods list/details UI. Generic creative category insertion/search adapter is implemented; frozen native descriptors still need a validated host resource adapter. Mutable native settings have no public contract. Rendered window smoke is blocked by the missing compositor; phase 2 gate is OPEN.
+- Phase 2: **gate CLOSED / PASS** for the read-only Mods list/details and real static-item/creative slice. Embedded original resources feed the existing Horizon loaders; two independent API-only mods were rendered together. Real inventory/save/restart, one-to-two-mod ID migration, a pre-native vanilla world, resource reload and TCP mismatch refusal passed. See VALIDATION.md and PHASE2_SMOKE_TEST.md. Mutable native settings, dynamic models and creative pagination remain unsupported; no such capability is claimed by this gate.
 - Phases 3–5: not started. No Create port work; complete the base Mod API first.
 
 ## Validation policy — decision of 2026-10-30
@@ -58,6 +58,20 @@ validation belongs to the phases that add those capabilities.
 - Add a sample item in a mod-defined creative tab only after the engine's existing item ID/storage/render path is understood.
 
 **Gate:** No per-mod match arms; two test mods both appear correctly; UI paths do not run on dedicated server.
+
+**2026-10-30 acceptance: PASS.** Concrete composition is isolated in native-pack;
+HelloWorld and opt-in Companion both render in the existing Mods and Creative UI.
+Server-only runtimes produce no mod-list view and do not dispatch client_setup.
+Registration/resource errors, stable save names, actual save/restart, old-world
+compatibility, feature-off/on, WASM and matching/mismatching protocol identities
+are validated in VALIDATION.md. Graphical checks used actual Vulkan offscreen
+frames outside the test sandbox. Full dedicated-world, in-frame, visible-window
+manual and Java differential runs are supplementary NOT RUN, not claimed passes.
+
+The gate covers metadata/details and static content as specified above; it does
+not invent native mutable settings or phase 3 gameplay capabilities. Phase 3 and
+Create remain unstarted in this iteration.
+
 
 ## Phase 3 — Gameplay-level extension points
 

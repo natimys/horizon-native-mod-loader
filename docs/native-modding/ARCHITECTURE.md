@@ -1,8 +1,22 @@
 # Native, compile-time Horizon mods — architecture contract
 
-Status: **experimental core/lifecycle, descriptor registry and independent mod list/details adapter implemented**. Version 4 / 2026-10-30.
+Status: **experimental metadata/lifecycle, embedded resources and real static items
+integrated**. Version 5 / 2026-10-30.
 
-The independent native workspace and opt-in Game-owned startup/shutdown bridge are implemented. The descriptor registry and UI data adapter are implemented; the latter now supplies the existing Horizon Mods list/details screen. Generic creative category insertion is implemented, while native resource adaptation, gameplay, save/network sync and ecosystem capabilities remain staged. See `VALIDATION.md` and `HORIZON_INTEGRATION_MAP.md`. The phase 1 gate checks existing Horizon regressions and public API contracts; full Minecraft Java differential parity is optional under the explicit decision in `ROADMAP.md`. JDK 25 is not required solely for that diagnostic.
+The opt-in native path now supplies Horizon's existing Content/resource loaders and
+Creative UI. Registration freezes before resources load; the same registered
+instance performs setup, with a common immutable snapshot shared by client/server
+resource consumers. Each Game still owns its own lifecycle. Mods depend only on
+the std-only public API. No native gameplay tick hooks or Create port exist.
+
+Resource/model/template/translation failures stop activation. Save IDs remain
+namespaced strings; protocol mapping uses the existing registry adapter and an
+exact static-content KnownPack check before play. Native settings, dynamic/special
+item models, creative pagination and registry remapping remain unsupported. See
+native-mods/README.md for the concrete public contract, VALIDATION.md for actual
+checks and HORIZON_INTEGRATION_MAP.md for every engine insertion. Phase 2 gate is
+CLOSED / PASS for read-only UI and static-item content; no phase 3 work has begun. Full Java differential parity is
+optional under ROADMAP.md; existing Horizon regressions remain blockers.
 
 ## Existing Horizon — verify against local checkout
 
@@ -53,7 +67,7 @@ Every compiled mod provides immutable metadata:
 
 The compiled mod list is authoritative. Mod discovery from a filesystem folder is NOT a feature of static linking. For a future build tool, resolve `native-modpack.toml` -> dependency graph -> generated pack Rust source/Cargo dependencies -> rebuild.
 
-Reject duplicate mod IDs, missing required dependencies, cycles, incompatible API versions and duplicate registry identifiers with actionable diagnostics. Deterministic ordering: dependency DAG first, stable ID tie-breaker. Include a stable modset/content digest in future networking support.
+Reject duplicate mod IDs, missing required dependencies, cycles, incompatible API versions and duplicate registry identifiers with actionable diagnostics. Deterministic ordering: dependency DAG first, stable ID tie-breaker. The static-item bridge now negotiates a deterministic content/registry digest before play; broader gameplay synchronization remains future work.
 
 ## Lifecycle
 
@@ -107,7 +121,7 @@ Never treat an ephemeral in-process integer registry ID as a save-file identity.
 - Hot reload of native code, compatibility with binary-only proprietary mods, or isolation of untrusted code.
 - Stable cross-version Rust ABI. The versioned PUBLIC API is source-level and rebuilt with the game.
 
-## Phase 2 descriptor contract (implemented standalone)
+## Phase 2 descriptor and resource contract (implemented)
 
 `ResourceId` validates canonical `namespace:path` names. `LoadContext` accepts
 `ItemDescriptor` and `CreativeTabDescriptor` declarations only during registration.
@@ -120,12 +134,16 @@ partial snapshot and never runs setup; normal fail-stop cleanup still applies.
 
 `ModContext::content()` provides a shared immutable snapshot before any setup hook,
 so dependent mods can query each other's declarations without private engine types.
-The item template is a symbolic host-resource reference: its existence/render/storage
-compatibility must be checked by the future engine adapter. No native content is
-inserted into a world yet; stable-name roundtrips are not save/network compatibility
-proof. UI, old-save and handshake tests remain phase 2/3 acceptance work.
+The item template is a symbolic host-resource reference, validated by the current
+engine adapter against existing vanilla components. Embedded resources are owned
+bytes submitted through LoadContext::register_resource. The host reuses Content
+and mod_content, validates model/texture/translation dependencies, then feeds
+Creative::load through its generic additions file. Save IDs remain namespaced
+strings; matching static protocol mappings are confirmed before play. Actual
+single-mod rendered/persistence evidence and the two-producer synthetic tests are
+recorded in VALIDATION.md, with remaining acceptance gaps stated separately.
 
-## Phase 2 compiled catalog and presentation contract (implemented standalone)
+## Phase 2 compiled catalog and presentation contract (implemented)
 
 Runtime captures `CompiledMod` entries for the complete validated dependency graph
 before host-side filtering. `metadata()` still returns only lifecycle-selected mods;
@@ -142,11 +160,9 @@ records whole-runtime state without inventing per-mod running/error information.
 Static native loading, rebuild requirements and full process privileges have
 explicit presentation notices. No toggle or settings callback is exposed.
 
-This is a data adapter, not an implemented Horizon screen. The next engine slice
-must add generic read-only rows/details to the actual Options UI, supply snapshots
-through the client bridge and preserve WASM and source-mixin behavior. Settings
-require a separate public configuration contract; content still requires resource,
-save and network validation before entering worlds.
+This data adapter supplies the actual Horizon screen through a generic bridge.
+Settings require a separate public configuration contract; the static item slice
+does not introduce mutable native settings or gameplay callbacks.
 
 ## Phase 2 Horizon presentation / creative adapter
 
@@ -158,10 +174,9 @@ explicitly runtime-wide state. Catalog refresh never constructs mods, runs hooks
 or persists enable/disable lines. Native configuration requires a future public
 contract; there is no fabricated Settings button. Server hosts produce no view.
 
-`Creative::append_tabs` is a generic host-side category/search insertion boundary,
-not yet wired to native content. It sorts new tabs by stable ID, allocates vacant
-positions in the existing 2x7 layout, retains existing positions and search
+`Creative::append_tabs` is the generic host-side category/search boundary used by
+native content through creative-additions.json. It sorts by stable ID, allocates
+vacant positions in the existing 2x7 layout, preserves existing positions/search
 components, and rejects duplicates/special tabs/overflow before mutation. Empty
-categories are allowed. The future native resource adapter must validate actual
-item/icon IDs and translate title keys before calling it; no new persistent
-items are active. Pagination and resource freeze handoff remain phase 2 work.
+categories are allowed. The native resource adapter resolves item/icon resources
+and title keys before exposing the resulting root. Pagination remains future work.

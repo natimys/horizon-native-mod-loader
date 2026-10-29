@@ -1,3 +1,112 @@
+# Latest phase 2 real-item validation — 2026-10-30
+
+This section supersedes earlier "content not integrated" and compositor-blocked
+notes below. Earlier entries remain historical evidence, not current status.
+
+**Phase 2 gate: CLOSED / PASS** for the read-only Mods list/details and static
+item/creative content defined by ROADMAP.md. Two real independent API-only mod
+crates were rendered in one client; ID, resource, inventory, persistence and
+mismatch behavior were exercised. Phase 3 and Create remain unstarted. Mutable
+native settings are not implemented or claimed by this gate.
+
+## Mandatory gate and implementation evidence
+
+| Criterion | Actual evidence / result |
+|---|---|
+| Independent mod -> public API -> real item | PASS: HelloWorld registers hello_mod:token, tab, original texture/model and EN/RU files through LoadContext only. Default pack is one mod; optional test-pack adds Companion with its own original resources. Both mod crates depend only on native-api. |
+| Reuse existing systems | PASS: native_content translates to Content::read + mod_content::resource_root; ordinary Items, model/PNG, language, Creative, commands, Builtin protocol tables and item NBT remain authoritative. No new live item registry/renderer/save codec. |
+| Two independent mods appear correctly | PASS: actual Vulkan offscreen client rendered both Mods rows and both Creative tabs/icons. Hello Token and Companion Marker were taken through Creative into separate hotbar slots; control inventory reports both namespaced IDs and count 1. Existing vanilla tabs/icons remained visible. |
+| Server/client separation | PASS: Client/Server/Combined lifecycle tests, server-only UI snapshot is None, fixed execution-role tests, two-mod runtime tests on all hosts; headless builds. No native client_setup/mod-list renderer is dispatched on a server host. Common resource/tab validation is data preparation, not mod UI rendering. |
+| Stable IDs, registration/composition order | PASS: two API-only producers through Runtime::freeze and existing host loaders, reversed constructor order, separate cache roots -> same item protocol mapping/content identity. Saves store strings. Real migration from one to two compiled mods shifted Hello Token protocol ID 1658 -> 1659; saved hello_mod:token and count 1 survived. |
+| Item save/reload | PASS: a real Creative-taken item was saved on the integrated server, process exited normally, single-mod native binary reopened the same scratch world and restored the same ID/count/slot. Gzipped temporary players/data NBT contains hello_mod:token. No save codec changes. |
+| Existing vanilla/content compatibility | PASS: old vanilla inventory roundtrip and a pre-existing content namespace/item keep names, IDs and translations in adapter tests; base resource files/marker remain unchanged. Full feature-off suite and real feature-off game startup passed. Real VanillaBefore world was created/saved by the feature-off binary, then reopened by the default native binary: minecraft:stick count 3 remained in slot 0; integrated join had zero decode errors. |
+| Invalid registrations/resources | PASS: runtime rejects duplicate item/tab/resource IDs, foreign/reserved namespaces, traversal, undeclared dependencies and side-specific persistent content before publication/setup. Host rejects missing templates, model/texture/translation, foreign-owner translation, item/namespace collision; creative rejects duplicate/special/overflow categories atomically. |
+| Protocol mismatch | PASS: memory configuration tests cover matching/different/absent/skipped confirmation. Real integrated join succeeds. Real TCP LAN login/configuration probes with no identity and wrong identity both receive explicit static-content Disconnect before play. No numeric remapping or downloads are offered. |
+| Resource reload/localization | PASS: rendered EN and RU titles/icons, ordinary F3+T reload, native tab/icon/item retained afterwards. Exactly two HelloWorld initialize messages (client + integrated server), with none replayed by reload. |
+| Existing WASM loader | PASS: combined native-mods,mods checks including two-mod pack; horizon-mods runtime/pack tests: 22 unit + 4 API reference + 32 real sandbox tests. 1 performance test ignored. No WASM production source modified. |
+| No per-mod engine branches | PASS: concrete HelloWorld/Companion composition stays in native-pack. Engine adapter reads generic frozen descriptors. Save/item/renderer implementation modules and source-mixin hooks unchanged; binary hookability regression test passes. |
+
+## Commands actually run
+
+Commands from the outer root use --manifest-path; Horizon-only commands can also
+run in horizon/. Cargo tests and all launched games used isolated home/XDG/launcher
+paths, no self-update/audio/Discord/telemetry, and no personal data. The launcher
+scratch trash/clipboard/desktop paths were set. XDG_RUNTIME_DIR was preserved.
+
+| Command/check | Result |
+|---|---|
+| Native workspace cargo test --workspace --offline | PASS: 21 tests, plus doc-test targets |
+| Native workspace cargo test --workspace --all-features --offline | PASS: 22 tests, including optional two-mod composition on all host sides |
+| Native cargo check --workspace --all-targets --all-features --offline | PASS |
+| Native cargo clippy --workspace --all-targets --all-features --offline -- -D warnings; cargo fmt --all --check | PASS |
+| Horizon cargo test -p horizon-client --lib --bin horizon-client --no-default-features --offline | PASS outside sandbox: 666 lib + 153 binary; 21 lib + 3 binary ignored |
+| Horizon cargo test -p horizon-client --lib --no-default-features --features native-mods --offline | PASS outside sandbox: 670 lib, 21 ignored (before final additional legacy-content test); final affected adapter tests rerun below |
+| Horizon native feature binary tests | PASS: 159, 3 ignored |
+| Final native_content::tests:: library filter | PASS: 5 tests, with real API-only registration, reversed composition, NBT/loaders, resources/errors, static digest and prior content compatibility |
+| Two-mod native binary tests, filter native_ | PASS: 9 including bridge, catalog and source-mixin hookability |
+| Horizon cargo check --bin horizon-client --no-default-features --features native-mods,mods --offline | PASS; repeated with horizon-native-pack/test-pack and --locked |
+| Horizon cargo build --bin horizon-client --bin horizon-ctl --no-default-features --features native-mods --locked --offline | PASS; default one-mod binary restored after acceptance pack test |
+| Same build with horizon-native-pack/test-pack | PASS; actual two-mod rendering and migration smoke |
+| Horizon feature-off --bin horizon-client build --locked --offline | PASS; actual feature-off game/world creation |
+| Horizon cargo clippy --lib --bin horizon-client --no-default-features --features native-mods --offline -- -D warnings | PASS |
+| Final Horizon cargo clippy --lib --tests --no-default-features --features native-mods --offline -- -D warnings | PASS after fixing one test-only cloned-ref assertion |
+| cargo test -p horizon-mods --features runtime,pack --locked --offline | PASS: 22 + 4 + 32; 1 ignored |
+| Feature-off normal Cargo dependency graph | PASS: no horizon-native-* crates, including Companion |
+| Cargo metadata boundary review | PASS: API has no dependencies; HelloWorld/Companion only native-api; runtime only native-api; pack owns composition; ui only API/runtime |
+| Targeted rustfmt --check on changed engine Rust files; git diff --check in both repositories; tools/check_public_tree.py | PASS |
+
+Initial full native library run inside the sandbox: 664 passed, 6 failed, 21
+ignored. All six failures were existing local TCP/Unix-socket tests (control,
+Discord fake socket, resource-pack download test HTTP servers). The unchanged
+suite passed 670/0/21 outside the sandbox. These initial failures are not hidden
+or counted as passes. A test-only Clippy warning was separately corrected and
+committed. The original public descriptor-extraction signature was restored as
+a compatibility wrapper; resource-aware extraction is additive. Native all-feature
+tests (22) and Clippy passed again after that adjustment. The initial GUI probe also timed out its control request before GPU
+initialization finished; the supervisor was corrected to wait for readiness and
+subsequent runs passed. No engine change was made to bypass display access.
+
+## Wayland and real-client results
+
+The socket exists at the session's XDG_RUNTIME_DIR. In sandbox, connect returns
+EPERM; outside sandbox, the same connection succeeds. Isolated clients rendered
+real 640x480 Vulkan frames on the session GPU with --offscreen. Visual inspection
+confirmed original orange H and blue C icons, separate tabs, English/Russian
+labels, two Mods rows and read-only details. This replaces the earlier unresolved
+"Could not find wayland compositor" status; the failure was environmental.
+
+All saves, options, caches, screenshots and LAN listeners belonged to fresh /tmp
+scratch games. Prepared resources were read-only inputs. Screenshots/derived game
+caches are not committed or uploaded. Clients and temporary LAN listeners were
+closed normally after validation. No personal saves/settings were accessed.
+
+Observed debug-build resource startup (not a controlled benchmark): feature off
+17.1 s / 1658 items; single mod 39.8 s / 1659 items; two mods 31.9 s / 1660 items.
+First rendered frame setup after resources: 7.307 / 7.837 / 7.097 s respectively.
+Build observations: feature-off 52.03 s and two-mod 51.01 s for the recorded
+incremental feature rebuilds; cache/compiler states differ. These numbers do not
+establish a regression budget. Native overlays use the existing table pipeline
+and have material startup/cache I/O cost; no native per-frame polling or tick
+callback was added. No native gameplay ticks are dispatched yet.
+
+Supplemental NOT RUN: ordinary visible-window interaction, in-frame world smoke,
+full dedicated-world smoke, full Java differential parity, and ignored upstream
+full-resource-root/performance tests. Headless builds/role tests and real default
+server-thread client-world/persistence/TCP checks did run. Mutable native settings,
+dynamic/special models, creative pagination and arbitrary registry sync are not
+implemented. These are not claimed as working.
+
+Manual reproduction: PHASE2_SMOKE_TEST.md. Next smallest development stage: a
+separate scoped proposal for the first phase 3 snapshot/action hook (or native
+configuration contract); no phase 3 code or Create port was started here.
+
+Commit ranges for implementation: outer repository `845c45a`–`fafd387` inclusive;
+Horizon repository `30cc874de`–`fd7316fd1` inclusive. The following acceptance-docs
+commit records the final gate/manual instructions. No push was performed. Existing
+untracked user files in both repositories are excluded from all stage commits.
+
+---
+
 # Native loader validation — 2026-10-30
 
 ## Latest increment — existing Mods screen integration and creative insertion

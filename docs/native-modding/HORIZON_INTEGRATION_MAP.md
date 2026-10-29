@@ -244,3 +244,73 @@ tests PASS. Descriptor/resource adapter: `4af7b388b`, 3 synthetic tests PASS; no
 prepared/player assets in fixtures. First static-model adapter supports plain
 model leaves, inheritance, generated icons and ordinary PNG textures. Dynamic or
 special models fail explicitly until separately validated.
+
+### Implemented real-item ledger — 2026-10-30
+
+The earlier candidate rows in this section are now implemented (except no separate
+native registry/resource decoder was added). Latest engine commits:
+`30cc874de` creative resource reader; `4af7b388b` native resource adapter;
+`f94a8a663` preparation/startup/reload ownership; `ea73e0266` protocol compatibility;
+`e2d990f01` owner-specific translation validation; `ae5ac6191` public-producer and
+legacy-content regression tests. All include the agent attribution trailer.
+
+| Exact engine entry | Implemented purpose / alternative / actual check |
+|---|---|
+| `creative.rs::Creative::load` | Optional creative-additions.json -> from_json + append_tabs; avoids second UI/search/layout. 18 creative tests PASS. |
+| `native_content.rs::resource_root`, `lib.rs` | Frozen descriptors -> ordinary Content::read directories -> existing mod_content::resource_root. Embedded data/assets go to game cache only. Plain model validation uses horizon-assets and png, not a new decoder. Five synthetic adapter tests PASS, real rendered item PASS. |
+| `game/native_api.rs::{NativeResources,NativeRuntime::prepare}` | Mutex transfers prepared instance to first Game; common frozen snapshot compared for subsequent Games. Alternative discovery runtime would discard register-owned state. Five bridge tests PASS; real client/integrated setup + reverse shutdown PASS. |
+| `game.rs::{Resources,load_resources,Game::new}` | Prepare before resource loading, retain ownership, setup before worlds; prevent fallback from silently removing native items. Feature off/on tests PASS. |
+| `game.rs::creative_tab_title` | Resolve generic title keys using existing language lookup. EN/RU actual rendered tab PASS. |
+| `game/startup_menu.rs::loader`, `game/packs.rs::stage_pack` | Carry role to worker preparation; resource reload consumes existing frozen snapshot. Compiled native/combined paths PASS; reload smoke recorded in VALIDATION. |
+| `registry_pack.rs`, `lib.rs` | Generic optional content identity, required on both sides. Avoid a parallel registry-sync protocol. Identity/helper and real memory configuration mismatch tests PASS. |
+| `native_content.rs::resource_root` marker | Deterministic digest of sorted declarations/files + existing registry mapping, independent of base/cache paths. Two reversed API-only producers and separate cache roots PASS. |
+| `lan/data.rs::SyncData::load` | Read optional required KnownPack; no marker means existing behavior. Full library native off/on PASS. |
+| `lan/conn.rs::login_and_configure` | Offer identity via existing KnownPack; reject missing confirmation before play. Matching real integrated join PASS; mismatch helper tested. External full server-login mismatch smoke NOT RUN. |
+| `net.rs::{Session::connect_resources,configure,receive_play}`, `game/remote.rs::join_server` | Carry resource identity per connection and reconfiguration, reject mismatch/skipped confirmation. Existing Session wrappers remain available. Memory configuration tests and real integrated persistence PASS. |
+
+No item storage, save codec, renderer implementation, WASM runtime or source-mixin
+hooks were edited. Native model decoding/texture baking and language loading are
+still the ordinary engine pipeline. Test assets are original generated pixels and
+synthetic JSON; no private prepared resource files were added to either repository.
+Native resource errors fail before any world is opened. Source-mixin hookability
+remains covered by the binary suite.
+
+Wayland audit: DISPLAY=:0, WAYLAND_DISPLAY=wayland-0 and the compositor socket are
+present. A sandboxed Unix socket connect returns EPERM; the identical read-only
+connection outside the sandbox succeeds. A scratch offscreen client outside the
+sandbox successfully rendered via the actual Vulkan GPU. Thus the earlier
+"Could not find wayland compositor" was a sandbox access failure, not a native
+modloader regression. XDG_RUNTIME_DIR was deliberately preserved for display access.
+
+Two-mod rendered acceptance follow-up: the optional `native-pack/test-pack` feature
+adds an independent `native-mods/mods/companion` crate depending only on native-api.
+It is composed entirely outside Horizon; production default remains HelloWorld.
+Any Cargo.lock update is limited to the new optional package/pack dependency record,
+required for locked reproducible builds. No engine feature, module or mod-specific
+branch is added. The test will reopen the single-mod scratch world with Companion
+sorting before HelloWorld, so the existing protocol adapter changes HelloWorld's
+transient integer while its saved name stays unchanged. Results, not this plan,
+determine whether the phase 2 gate can close.
+
+### Phase 2 gate result
+
+Two-mod acceptance passed in the real offscreen Vulkan client: both Mods rows,
+both tabs/icons, two native IDs in hotbar, EN/RU names. Adding earlier-sorted
+Companion moved Hello Token's protocol number 1658 -> 1659, while the actual saved
+hello_mod:token/count/slot survived. Actual TCP probes for absent and wrong static
+identity received configuration Disconnect before play. A separate world created
+by the feature-off binary reopened in the final native binary with vanilla sticks
+(count 3, slot 0) unchanged. F3+T retained content without replaying constructors.
+
+Phase 2 gate is CLOSED / PASS under ROADMAP.md's read-only/static-content contract.
+The optional test pack needed no further Horizon file or feature changes; locked
+build/check commands passed and Horizon Cargo.lock remained unchanged. The two
+API-only mod crates and native-api/runtime dependency graph were reviewed again.
+No client hook/catalog renderer runs on server-only runtimes. Full dedicated-world
+and visible-window/in-frame smoke remain NOT RUN; see VALIDATION.md for exact scope.
+
+No phase 3 gameplay hook and no Create port was started. Mutable settings, dynamic
+item model trees and creative pagination still require independent API proposals.
+Final engine range for this stage: `30cc874de`–`fd7316fd1` inclusive. Native API,
+examples/composition and documentation commits live in the outer repository;
+VALIDATION.md records the stage ranges. Existing untracked user files are preserved.
