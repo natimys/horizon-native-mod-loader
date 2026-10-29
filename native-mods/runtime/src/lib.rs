@@ -86,8 +86,17 @@ struct Entry {
     metadata: &'static ModMetadata,
 }
 
+/// Immutable compiled catalog entry, including mods excluded from this host's hooks.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct CompiledMod {
+    pub metadata: &'static ModMetadata,
+    /// Side selection only; this does not assert successful setup or permit toggling.
+    pub selected_for_host: bool,
+}
+
 pub struct Runtime {
     mods: Vec<Entry>,
+    compiled: Vec<CompiledMod>,
     tick_subscribers: Vec<usize>,
     started: usize,
     side: HostSide,
@@ -152,6 +161,7 @@ impl Runtime {
         let ids: BTreeSet<_> = pending.keys().copied().collect();
         let mut completed = BTreeSet::new();
         let mut ordered = Vec::new();
+        let mut compiled = Vec::new();
         while !pending.is_empty() {
             let ready = pending
                 .iter()
@@ -170,12 +180,17 @@ impl Runtime {
             };
             let entry = pending.remove(id).expect("ready entry");
             completed.insert(id);
+            compiled.push(CompiledMod {
+                metadata: entry.metadata,
+                selected_for_host: side.supports(entry.metadata.side),
+            });
             if side.supports(entry.metadata.side) {
                 ordered.push(entry);
             }
         }
         Ok(Self {
             mods: ordered,
+            compiled,
             tick_subscribers: Vec::new(),
             started: 0,
             side,
@@ -187,6 +202,12 @@ impl Runtime {
     /// Active mods for this host, in lifecycle order.
     pub fn metadata(&self) -> impl ExactSizeIterator<Item = &'static ModMetadata> + '_ {
         self.mods.iter().map(|entry| entry.metadata)
+    }
+
+    /// Complete validated pack in dependency/ID order, independent of host selection.
+    /// Uses the metadata captured during resolution; querying never calls mod code.
+    pub fn compiled_mods(&self) -> impl ExactSizeIterator<Item = &CompiledMod> {
+        self.compiled.iter()
     }
     pub fn state(&self) -> State {
         self.state

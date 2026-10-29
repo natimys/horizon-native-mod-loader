@@ -278,3 +278,62 @@ fn client_and_server_setup_do_not_cross_sides() {
             .any(|a| matches!(a, ModAction::Log { message, .. } if message == absent)));
     }
 }
+
+#[test]
+fn compiled_catalog_keeps_other_sides_without_dispatching_their_hooks() {
+    const CLIENT: ModMetadata = ModMetadata {
+        id: "client",
+        side: ModSide::Client,
+        ..A
+    };
+    const SERVER: ModMetadata = ModMetadata {
+        id: "server",
+        side: ModSide::Server,
+        ..A
+    };
+    for side in [HostSide::Client, HostSide::Server, HostSide::Combined] {
+        for reverse in [false, true] {
+            let trace = Arc::new(Mutex::new(Vec::new()));
+            let mut mods: Vec<Box<dyn NativeMod>> = [&SERVER, &B, &CLIENT, &A]
+                .into_iter()
+                .map(|meta| {
+                    Box::new(Dummy {
+                        meta,
+                        trace: trace.clone(),
+                        fail: "",
+                        tick: false,
+                    }) as Box<dyn NativeMod>
+                })
+                .collect();
+            if reverse {
+                mods.reverse();
+            }
+            let mut runtime = Runtime::for_side(mods, side).unwrap();
+            let catalog = runtime.compiled_mods().copied().collect::<Vec<_>>();
+            assert_eq!(
+                catalog.iter().map(|m| m.metadata.id).collect::<Vec<_>>(),
+                ["alpha", "beta", "client", "server"]
+            );
+            assert!(trace.lock().unwrap().is_empty());
+            assert_eq!(runtime.compiled_mods().len(), 4);
+            for entry in &catalog {
+                assert_eq!(entry.selected_for_host, side.supports(entry.metadata.side));
+            }
+            runtime.initialize().unwrap();
+            for entry in &catalog {
+                let called = trace
+                    .lock()
+                    .unwrap()
+                    .iter()
+                    .any(|s| s == &format!("{}:register", entry.metadata.id));
+                assert_eq!(called, entry.selected_for_host);
+            }
+            runtime.shutdown();
+            assert_eq!(
+                runtime.compiled_mods().copied().collect::<Vec<_>>(),
+                catalog
+            );
+        }
+    }
+    assert_eq!(Runtime::new(vec![]).unwrap().compiled_mods().len(), 0);
+}
