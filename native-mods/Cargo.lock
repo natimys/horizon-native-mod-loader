@@ -27,3 +27,11 @@ version = "0.1.0"
 dependencies = [
  "horizon-native-api",
 ]
+
+[[package]]
+name = "horizon-native-ui"
+version = "0.1.0"
+dependencies = [
+ "horizon-native-api",
+ "horizon-native-runtime",
+]

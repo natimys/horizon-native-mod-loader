@@ -212,6 +212,9 @@ impl Runtime {
     pub fn state(&self) -> State {
         self.state
     }
+    pub fn host_side(&self) -> HostSide {
+        self.side
+    }
     pub fn has_tick_subscribers(&self) -> bool {
         !self.tick_subscribers.is_empty()
     }

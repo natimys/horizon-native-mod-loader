@@ -1,0 +1,9 @@
+[package]
+name = "horizon-native-ui"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+horizon-native-api = { path = "../api" }
+horizon-native-runtime = { path = "../runtime" }
