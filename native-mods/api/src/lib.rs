@@ -74,8 +74,14 @@ impl LoadContext {
         self.resources.push((path.into(), bytes.into()));
     }
 
+    /// Original item/tab extraction contract, retained for existing consumers.
+    /// Resource-aware hosts use `into_declarations` instead.
+    pub fn into_descriptors(self) -> (Vec<ItemDescriptor>, Vec<CreativeTabDescriptor>) {
+        (self.items, self.tabs)
+    }
+
     /// Runtime consumes declarations; nothing is published until global freeze succeeds.
-    pub fn into_descriptors(self) -> ContentDeclarations {
+    pub fn into_declarations(self) -> ContentDeclarations {
         ContentDeclarations {
             items: self.items,
             tabs: self.tabs,

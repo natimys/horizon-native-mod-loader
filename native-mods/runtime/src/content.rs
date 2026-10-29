@@ -10,7 +10,7 @@ pub(super) fn collect(
         items,
         tabs,
         resources,
-    } = context.into_descriptors();
+    } = context.into_declarations();
     if metadata.side != horizon_native_api::ModSide::Common
         && (!items.is_empty() || !tabs.is_empty() || !resources.is_empty())
     {
