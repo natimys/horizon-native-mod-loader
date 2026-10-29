@@ -175,3 +175,46 @@ new work is `1f92f3e8b`, `74cfb34af`, `859e73057`. No changes to existing
 Actual client startup/shutdown passed with isolated paths; window creation failed
 with `Could not find wayland compositor`. This does not satisfy rendered UI
 acceptance. Phase 2 remains OPEN and phase 3/Create remain unstarted.
+
+## Phase 2 real item slice — audited plan, 2026-10-30
+
+Observed: `Items::load` consumes items.json; `ItemStack` owns an Arc<str> ID,
+`item_nbt` persists that string. `mod_content::Plan::{items,json}` already adapts
+components, command and protocol registries; `build/resource_root` overlays
+assets/data without changing the resource decoders. `Content::read` accepts an
+ordinary directory and validates namespaces/limits. Native embedded files can be
+materialized into an isolated, content-addressed cache and fed to this SAME path.
+No second engine registry or texture decoder is necessary. `Creative::append_tabs`
+already validates placement and search; a generic additions resource can feed it.
+`lang::Language` and `creative::Names` already discover overlay namespaces.
+
+Implementation steps (each independently committed):
+1. Split runtime registration/freeze from setup; add owned embedded resource
+   declarations with namespace/path/duplicate checks. Persistent content belongs
+   to common mods so client/server cannot silently produce different catalogs.
+2. Generic native resource adapter translates frozen descriptors to existing
+   Content directories, validates required item models/textures/translations,
+   calls mod_content, and writes a creative additions resource. Synthetic tests
+   use original generated fixtures only.
+3. Prepare/freeze the first runtime before resource loading; Resources owns that
+   prepared instance and snapshot. Game takes it for setup; integrated servers
+   register their own instances and must match the resource snapshot. Pack reload
+   reuses the snapshot. No extra mod constructor for resource discovery.
+4. HelloWorld declares an original item, model, texture and English/Russian strings
+   using only the public API. Test real Items/Creative/NBT/protocol mappings.
+5. Validate feature matrix, WASM and isolated runtime; investigate display access;
+   document mandatory GUI checks honestly and leave phase 2 open if unavailable.
+
+| Candidate engine file / entry point | Reason | Alternative considered | Test |
+|---|---|---|---|
+| `horizon-client/src/native_content.rs`, `lib.rs` | Optional generic descriptor-to-Content adapter using existing overlay | Separate registry/resource pipeline duplicates engine contracts | Synthetic two mods, template/resource/collision errors, stable mappings, NBT |
+| `horizon-client/src/creative.rs::load` | Read generic additive tabs resource through append_tabs | Writing a second creative UI duplicates placement/search | Existing creative tests plus additions/search/localization |
+| `horizon-client/src/game/native_api.rs` | Freeze before resources; own prepared runtime and shared snapshot | Discovery runtime plus Game runtime loses register-owned state | Registration once, side comparison, cleanup |
+| `horizon-client/src/game.rs::{load_resources,Resources,Game::new,creative_tab_title}` | Transfer prepared runtime, resolve tab title key | Late initialization cannot supply resources before world loading | Feature off/on tests, synchronous/worker startup |
+| `horizon-client/src/game/{startup_menu,packs}.rs` | Pass host role; reuse frozen content on reload | Reconstructing runtime on reload repeats hooks | Combined build, reload contract |
+
+Existing untracked outer `.agents/`, `.codex/`, README-SETUP.md and upstream
+horizon_official_server.txt are user-owned and excluded from commits. No remote is
+configured in upstream, so `gh pr list` cannot inspect concurrent upstream PRs.
+Network mismatch handling must be audited before claiming external multiplayer
+compatibility; the default integrated server also uses protocol item IDs.
