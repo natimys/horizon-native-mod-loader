@@ -7,6 +7,13 @@ name = "horizon-native-api"
 version = "0.1.0"
 
 [[package]]
+name = "horizon-native-companion-mod"
+version = "0.1.0"
+dependencies = [
+ "horizon-native-api",
+]
+
+[[package]]
 name = "horizon-native-hello-mod"
 version = "0.1.0"
 dependencies = [
@@ -17,6 +24,7 @@ dependencies = [
 name = "horizon-native-pack"
 version = "0.1.0"
 dependencies = [
+ "horizon-native-companion-mod",
  "horizon-native-hello-mod",
  "horizon-native-runtime",
 ]

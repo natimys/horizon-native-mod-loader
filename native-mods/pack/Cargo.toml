@@ -7,3 +7,7 @@ publish = false
 [dependencies]
 horizon-native-runtime = { path = "../runtime" }
 horizon-native-hello-mod = { path = "../mods/hello" }
+horizon-native-companion-mod = { path = "../mods/companion", optional = true }
+
+[features]
+test-pack = ["dep:horizon-native-companion-mod"]
