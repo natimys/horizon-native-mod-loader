@@ -1,0 +1,3 @@
+[workspace]
+members = ["api", "runtime", "pack", "mods/hello"]
+resolver = "2"

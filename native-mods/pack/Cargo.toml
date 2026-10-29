@@ -1,0 +1,9 @@
+[package]
+name = "horizon-native-pack"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+horizon-native-runtime = { path = "../runtime" }
+horizon-native-hello-mod = { path = "../mods/hello" }
