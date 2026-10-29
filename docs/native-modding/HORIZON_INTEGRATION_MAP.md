@@ -67,6 +67,33 @@ a permanently linked mod; add loading-model semantics before wiring rows. Keep
 client presentation out of dedicated servers. Content overlay adaptation follows
 only after template validation, creative pagination, old-save and mismatch checks.
 The descriptor snapshot alone does not close the phase 2 UI/content gate.
-`Runtime::metadata()` currently lists active mods for one host, not the whole
-compiled set; the UI adapter must account for inactive side-specific mods before
-claiming to display the complete pack.
+`Runtime::metadata()` lists selected mods for one host. The standalone catalog/UI
+slice below now accounts for inactive side-specific mods, without engine edits.
+
+## Phase 2 compiled catalog/UI data slice — 2026-10-30
+
+Observed at session start: pre-existing modifications in Horizon's `Cargo.lock`,
+`crates/horizon-client/Cargo.toml`, `src/game.rs`, plus untracked
+`src/game/native_api.rs` and `horizon_official_server.txt`. All are preserved;
+none was edited or included in this session's commits. The outer repository was
+initialized for the requested commit policy. Its authorized baseline includes
+only existing native sources/integration notes, separately from new work.
+
+Implemented outside the engine: `Runtime::compiled_mods()` retains the full
+validated metadata graph before host selection, while `metadata()` keeps its
+existing lifecycle semantics. `native-mods/ui` maps that catalog into client-only
+read-only list/details snapshots, including exact dependency status and static
+loading notices. Server-only hosts receive no view. No new engine ledger rows:
+this increment needs no engine insertion and does not change the existing WASM,
+source-mixin, world, storage, packet or renderer code.
+
+Next proposed engine plan (still unimplemented):
+
+| File / entry point | Purpose and necessity | Alternative considered | Acceptance |
+|---|---|---|---|
+| `horizon-client-render/src/mod_list.rs::Installed` | Generic loading-model and read-only details contract, distinct from the existing switchable `native` page | Reusing `dev` or `native` misrepresents loading/toggle semantics | Existing WASM/mixin list and persistence tests; linked rows cannot toggle |
+| `horizon-client-render/src/options_ui.rs::list_rows` and details routing | Render data from arbitrary compiled entries without mod identities | Standalone UI adapter cannot draw engine-owned widgets | Two mods, empty list, details/back navigation, long/localized text and actual rendered smoke |
+| `horizon-client/src/game/mods.rs::list_mods` / generic native bridge | Supply captured compiled metadata on client hosts without rerunning constructors or hooks; keep WASM indices stable | Reconstructing the pack for presentation could execute constructors twice | Feature off/on and combined WASM checks; no dedicated-server UI calls; refresh without duplication |
+
+Do not stage pre-existing engine changes with these future insertions. Preserve
+source-mixin hookability and keep a separate engine integration commit.

@@ -1,6 +1,57 @@
 # Native loader validation — 2026-10-30
 
-## Scope and actual state
+## Latest increment — commit policy and phase 2 list/details data adapter
+
+Root `AGENTS.md` now mandates one completed engineering step per Conventional
+Commit, explicit staging, preservation of existing changes/history, relevant
+pre-commit checks, commit/test reporting and no push without explicit instruction.
+The outer repository was initialized; the first commit `b848dee` contains only
+`AGENTS.md`. `7051696` adds private-resource/build exclusions. At the user's
+explicit approval, `37a5799` records the pre-existing standalone sources and notes
+as a separately identified baseline, not work authored in this increment.
+
+New implementation commits: `8dbce9e` (complete compiled catalog and regression
+test) and `58006aa` (independent UI list/details model and tests). Public host API:
+`CompiledMod`, `Runtime::compiled_mods()`, `Runtime::host_side()` and the
+`horizon-native-ui` read-only view/detail/dependency types. The mod-facing
+`horizon-native-api` is unchanged. The UI model includes all compiled sides,
+metadata, exact dependency status and static-loading/rebuild/trust notices. It
+does not expose toggles or mutable settings. Server-only runtimes return no view.
+
+| Check actually run in this increment | Result |
+|---|---|
+| `cargo fmt --manifest-path native-mods/Cargo.toml --all --check` | PASS |
+| `cargo test --manifest-path native-mods/Cargo.toml --workspace --locked --offline` | PASS: 18 tests; 14 baseline + 4 new |
+| `cargo check --manifest-path native-mods/Cargo.toml --workspace --all-targets --locked --offline` | PASS |
+| `cargo clippy --manifest-path native-mods/Cargo.toml --workspace --all-targets --locked --offline -- -D warnings` | PASS |
+| Cargo metadata dependency assertions | PASS: API std-only; hello → API; runtime → API; UI → API/runtime |
+| Horizon normal dependency tree without native feature | PASS: no `horizon-native-*` crates |
+| Horizon `cargo test -p horizon-client --bin horizon-client --no-default-features --locked --offline` | PASS: 153 passed, 3 ignored |
+| Same Horizon command with `--features native-mods` | PASS: 156 passed, 3 ignored |
+| Horizon `cargo check -p horizon-client --bin horizon-client --no-default-features --features native-mods,mods --locked --offline` | PASS |
+| Root staged/working diff whitespace checks; Horizon diff whitespace check | PASS |
+| Horizon `python3 tools/check_public_tree.py` | PASS |
+
+Horizon checks used fresh temporary game/launcher/XDG homes and launcher scratch
+paths, with self-update/audio/Discord/telemetry disabled. No game or launcher was
+launched. No assets, proprietary resources or real saves were required or copied.
+
+Exact engine changes in this increment: **none**. All pre-existing Horizon
+changes remain uncommitted and untouched. No native UI dependency was added to
+Horizon. The feature-off behavior and coexistence checks above cover the existing
+bridge consuming the updated runtime; they do not exercise an implemented Mods
+screen. Existing WASM runtime tests and Java parity were not rerun in this
+increment because no WASM, gameplay or engine code changed; earlier evidence below
+is historical, not a claim of a fresh run.
+
+Phase 2 remains OPEN: rendered list/details, mutable settings API, live resource/
+creative adapters, icon resolution, old saves and network/mismatch validation are
+pending. Next smallest step: generic read-only loading-model/details support in
+the engine's existing Mods UI, then connect this snapshot through the client
+bridge while preserving existing WASM indices and source-mixin hooks. Review the
+insertion plan in `HORIZON_INTEGRATION_MAP.md` first. Create remains deferred.
+
+## Previous increment — historical scope and evidence
 
 Phase 0 audit and phase 1 code are implemented. The phase 1 gate is **CLOSED / PASS**
 against the mandatory matrix below under the revised acceptance policy. Phase 2 has started with standalone item/tab
@@ -8,9 +59,10 @@ registration and freeze; its UI/content gate remains OPEN. Phases 3–5 and Crea
 have not started.
 
 Local toolchain: rustc 1.99.1 (58cf8f9c3 2026-10-13), Cargo's selected toolchain,
-no upstream toolchain override file. Outer directory has no Git repository;
-Horizon is independently versioned. Initial user file `horizon_official_server.txt`
-is preserved. No commits, PRs, or asset uploads were made.
+no upstream toolchain override file. At that earlier increment the outer directory
+had no Git repository; Horizon was independently versioned. Initial user file
+`horizon_official_server.txt` was preserved. No commits, PRs, or asset uploads were
+made in that earlier increment. See the latest increment above for current commits.
 
 ## Validation decision — 2026-10-30
 

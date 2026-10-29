@@ -9,7 +9,10 @@ The independent workspace uses only std; mod crates depend only on the public AP
   registration-only `LoadContext`, owned log actions and lifecycle callbacks;
   canonical `ResourceId`, item/tab descriptors and a read-only content snapshot.
 - `runtime`: deterministic dependency DAG / ID order, API/version/side checks,
-  registration then freeze then setup, opt-in tick subscribers, reverse cleanup.
+  registration then freeze then setup, opt-in tick subscribers, reverse cleanup;
+  complete compiled catalog, including side-inactive mods.
+- `ui`: engine-independent read-only mod list/details snapshots for client hosts;
+  metadata, dependency presence and explicit static-link/trusted-code notices.
 - `mods/hello`: API-only common mod; init/shutdown log example.
 - `pack`: explicit composition root, the only production crate naming concrete mods.
 
@@ -47,9 +50,21 @@ IDs belong to the declaring mod namespace; duplicate IDs, missing native tab ico
 members and cross-mod references without declared dependencies fail before setup.
 Callbacks read the shared immutable snapshot through `ModContext::content()`.
 This is descriptor registration only: templates still need host validation, and no
-items/tabs are inserted into Horizon resources, saves or networking. Mods UI/settings
-and gameplay adapters remain pending. Two API-only test mods exercise ordering,
+items/tabs are inserted into Horizon resources, saves or networking. Rendered Mods
+UI/settings and gameplay adapters remain pending. Two API-only test mods exercise ordering,
 cross-mod reads, empty tabs and rejected registrations without assets or a display.
+
+`Runtime::metadata()` lists only mods selected for the host's lifecycle.
+`Runtime::compiled_mods()` lists the complete validated pack in dependency/ID order;
+`selected_for_host` describes side selection, not runtime enablement or successful
+setup. Catalog reads use captured metadata and never call mod code.
+`horizon_native_ui::ModListView::for_runtime(&runtime)` captures that catalog and
+the runtime's state, or returns `None` for server-only hosts. Details are looked up
+by stable mod ID and retain all metadata and declared dependency versions. Required
+dependencies were validated by resolution; absent optional ones are shown as such.
+Snapshots remain unchanged when runtime state changes; capture again to refresh.
+The model has no toggle or mutable settings actions. It is not connected to
+Horizon's Options screen yet and does not claim rendered UI acceptance.
 
 Mandatory gates protect existing Horizon behavior, native on/off, WASM coexistence
 and API/lifecycle correctness. Full Minecraft Java parity is optional; JDK 25 is not

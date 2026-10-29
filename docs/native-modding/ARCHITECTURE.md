@@ -1,8 +1,8 @@
 # Native, compile-time Horizon mods — architecture contract
 
-Status: **experimental core/lifecycle slice implemented; phase 2 descriptor registry started**. Version 2 / 2026-10-30.
+Status: **experimental core/lifecycle, descriptor registry and independent mod list/details adapter implemented**. Version 3 / 2026-10-30.
 
-The independent native workspace and opt-in Game-owned startup/shutdown bridge are implemented. The standalone descriptor registry is implemented; engine content/UI adapters, gameplay, save/network sync and ecosystem capabilities remain staged. See `VALIDATION.md` and `HORIZON_INTEGRATION_MAP.md`. The phase 1 gate checks existing Horizon regressions and public API contracts; full Minecraft Java differential parity is optional under the explicit decision in `ROADMAP.md`. JDK 25 is not required solely for that diagnostic.
+The independent native workspace and opt-in Game-owned startup/shutdown bridge are implemented. The standalone descriptor registry and UI data adapter are implemented; rendered engine UI, content adapters, gameplay, save/network sync and ecosystem capabilities remain staged. See `VALIDATION.md` and `HORIZON_INTEGRATION_MAP.md`. The phase 1 gate checks existing Horizon regressions and public API contracts; full Minecraft Java differential parity is optional under the explicit decision in `ROADMAP.md`. JDK 25 is not required solely for that diagnostic.
 
 ## Existing Horizon — verify against local checkout
 
@@ -124,3 +124,26 @@ The item template is a symbolic host-resource reference: its existence/render/st
 compatibility must be checked by the future engine adapter. No native content is
 inserted into a world yet; stable-name roundtrips are not save/network compatibility
 proof. UI, old-save and handshake tests remain phase 2/3 acceptance work.
+
+## Phase 2 compiled catalog and presentation contract (implemented standalone)
+
+Runtime captures `CompiledMod` entries for the complete validated dependency graph
+before host-side filtering. `metadata()` still returns only lifecycle-selected mods;
+`compiled_mods()` returns all entries in deterministic dependency/ID order, with a
+`selected_for_host` flag. Catalog reads never invoke constructors or callbacks.
+Selection does not assert successful setup and does not permit runtime disabling.
+
+The std-only `horizon-native-ui` crate depends on API/runtime, never on engine
+internals; mod crates do not depend on it. `ModListView::for_runtime` produces a
+read-only client snapshot or `None` on a server-only host. Entries retain every
+metadata field and exact dependency requirements, distinguish present dependencies
+from absent optional ones, and support stable-ID details lookup. The snapshot
+records whole-runtime state without inventing per-mod running/error information.
+Static native loading, rebuild requirements and full process privileges have
+explicit presentation notices. No toggle or settings callback is exposed.
+
+This is a data adapter, not an implemented Horizon screen. The next engine slice
+must add generic read-only rows/details to the actual Options UI, supply snapshots
+through the client bridge and preserve WASM and source-mixin behavior. Settings
+require a separate public configuration contract; content still requires resource,
+save and network validation before entering worlds.
