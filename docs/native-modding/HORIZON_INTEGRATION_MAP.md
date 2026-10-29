@@ -97,3 +97,28 @@ Next proposed engine plan (still unimplemented):
 
 Do not stage pre-existing engine changes with these future insertions. Preserve
 source-mixin hookability and keep a separate engine integration commit.
+
+## Phase 2 rendered catalog plan — 2026-10-30
+
+Session baseline: the phase 1 client Cargo/lock/game/native_api changes are already
+uncommitted; keep them out of phase 2 commits unless separately authorized.
+
+Use a separate read-only catalog collection in the EXISTING `ModList`, rather
+than inserting entries into `installed`: WASM screen owners and source-mixin
+settings continue to use their original indices, IDs and toggle persistence.
+`OptionsUi` will draw catalog buttons and a details page with its current rows,
+scrolling, focus and Done/Esc navigation. The native UI adapter is the sole source
+of native metadata/dependencies/state; opening the screen must not create mods.
+
+| File / entry point | Reason | Alternative considered | Test |
+|---|---|---|---|
+| `horizon-client-render/src/mod_list.rs::ModList` | Generic read-only catalog records alongside switchable installed mods | Extending Installed would touch source-mixin hook bodies and conflate WASM owner indices | Toggle/serialization unchanged, empty catalog |
+| `horizon-client-render/src/options_ui.rs::Page, list_rows` | Existing Mods list/details widgets for read-only catalog records | Adapter alone cannot draw the engine widgets | Two entries, scrolling/localized text, Done/Esc, WASM/mixin regression |
+| `horizon-client/Cargo.toml::native-mods`, `Cargo.lock` | Optional existing native-ui adapter dependency | Duplicating runtime catalog/dependency logic in engine | Native off/on/combined feature builds |
+| `horizon-client/src/game/native_api.rs::catalog` | Read-only snapshot from the existing runtime owner | Reconstructing the pack would run constructors twice | Host selection and unchanged runtime state |
+| `horizon-client/src/game/options.rs::open_options_at` and new `native_catalog.rs` | Translate public UI snapshot into existing ModList records; wrap with existing font | Engine-independent adapter cannot depend on Horizon widgets/fonts | Server exclusion, public metadata mapping, refresh replaces catalog |
+
+Creative follow-up: audit resource overlay construction and tab positioning before
+inserting native descriptors. Existing `Tab` is data-driven, but `tab_position`
+assumes columns 0..6; pagination/collision validation is necessary. New persistent
+items remain gated by template/render/storage and multiplayer mismatch checks.
