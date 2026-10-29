@@ -6,7 +6,7 @@ Each phase ends with working code + tests + a brief audit of changed engine line
 
 - Phase 0: local source audit and insertion ledger written in `HORIZON_INTEGRATION_MAP.md`.
 - Phase 1: **gate CLOSED / PASS** against the mandatory Horizon regression/API criteria below. See `VALIDATION.md` for the evidence matrix. Full Minecraft Java parity is optional.
-- Phase 2: **STARTED**, standalone item/tab registration and global freeze implemented and tested with two API-only test mods. Complete compiled catalog and independent read-only list/details adapter implemented; rendered UI/settings and live content adapters remain pending; phase 2 gate is OPEN.
+- Phase 2: **STARTED**, standalone item/tab registration and global freeze implemented and tested with two API-only test mods. Complete compiled catalog and read-only adapter are integrated into the existing Horizon Mods list/details UI. Generic creative category insertion/search adapter is implemented; frozen native descriptors still need a validated host resource adapter. Mutable native settings have no public contract. Rendered window smoke is blocked by the missing compositor; phase 2 gate is OPEN.
 - Phases 3–5: not started. No Create port work; complete the base Mod API first.
 
 ## Validation policy — decision of 2026-10-30

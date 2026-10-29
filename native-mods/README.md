@@ -50,8 +50,9 @@ IDs belong to the declaring mod namespace; duplicate IDs, missing native tab ico
 members and cross-mod references without declared dependencies fail before setup.
 Callbacks read the shared immutable snapshot through `ModContext::content()`.
 This is descriptor registration only: templates still need host validation, and no
-items/tabs are inserted into Horizon resources, saves or networking. Rendered Mods
-UI/settings and gameplay adapters remain pending. Two API-only test mods exercise ordering,
+items/tabs are inserted into Horizon resources, saves or networking. The Mods list/details
+now use Horizon's existing UI; mutable settings and gameplay adapters remain pending.
+Two API-only test mods exercise ordering,
 cross-mod reads, empty tabs and rejected registrations without assets or a display.
 
 `Runtime::metadata()` lists only mods selected for the host's lifecycle.
@@ -63,8 +64,9 @@ the runtime's state, or returns `None` for server-only hosts. Details are looked
 by stable mod ID and retain all metadata and declared dependency versions. Required
 dependencies were validated by resolution; absent optional ones are shown as such.
 Snapshots remain unchanged when runtime state changes; capture again to refresh.
-The model has no toggle or mutable settings actions. It is not connected to
-Horizon's Options screen yet and does not claim rendered UI acceptance.
+The model has no toggle or mutable settings actions. It is now connected to
+Horizon's existing Options > Mods screen through the optional engine bridge.
+Window rendering acceptance still needs a working compositor.
 
 Mandatory gates protect existing Horizon behavior, native on/off, WASM coexistence
 and API/lifecycle correctness. Full Minecraft Java parity is optional; JDK 25 is not

@@ -1,6 +1,68 @@
 # Native loader validation — 2026-10-30
 
-## Latest increment — commit policy and phase 2 list/details data adapter
+## Latest increment — existing Mods screen integration and creative insertion
+
+Horizon commits (inclusive): `1f92f3e8b`–`859e73057` (four commits).
+`e79d9f260` records only the explicitly authorized pre-existing phase 1 engine
+baseline. The three new engineering steps are read-only Options list/details
+(`1f92f3e8b`), runtime snapshot projection (`74cfb34af`), and generic creative
+category insertion/search (`859e73057`). The outer integration plan is `820dca4`;
+this report accompanies a separate documentation commit. Nothing was pushed.
+
+Public API delta: no change to the mod-facing native-api/runtime/ui crates.
+Host presentation adds `CatalogMod`, `ModList::catalog`, `Page::ModDetails`;
+`Creative::append_tabs(Vec<Tab>)` is a generic host insertion boundary.
+Production metadata comes only from `NativeRuntime::catalog()` -> public
+`ModListView`, never a parallel manifest or another pack construction. The
+projection includes ID/name/version, authors/license/description, API/side,
+exact dependencies and optional absence, host selection and runtime-wide state.
+Font wrapping uses Horizon's current Font. Details have no settings/toggle
+callbacks; existing WASM/mixin installed indices and toggle persistence stay
+separate. The engine ledger lists every insertion and its alternative.
+
+| Check actually run | Result |
+|---|---|
+| `cargo test --manifest-path native-mods/Cargo.toml --workspace --offline` | PASS: 18 tests, plus doc-test targets |
+| Native workspace `cargo fmt --all --check` | PASS |
+| `cargo test -p horizon-client-render --no-default-features --offline --lib options_ui::tests::` | PASS: 32; 1 ignored (prepared language data) |
+| Same render target, `mod_list::tests::` | PASS: 4 |
+| Client binary tests, `--no-default-features --features native-mods --offline` | PASS: 157; 3 upstream ignored |
+| Client binary tests, `--no-default-features --offline` | PASS: 153; 3 upstream ignored |
+| Native catalog projection test after adding long localized text and empty snapshots | PASS: 1; same runtime state and repeated snapshot, two public API mods on Client/Combined/Server |
+| Native-off `cargo tree -e normal --prefix none` | PASS: no horizon-native-* dependencies |
+| Client binary `cargo check --no-default-features --features native-mods,mods --offline` | PASS: both loader features enabled |
+| `cargo test -p horizon-mods --offline --lib` | PASS: 18 packaging/manifest/content tests |
+| `cargo test -p horizon-mods --features runtime,pack --offline` | PASS: 22 unit + 4 API reference + 32 sandbox tests; 1 sandbox ignored |
+| Client `--lib` tests, `--no-default-features --offline creative::tests::` | PASS: all 17 creative tests, including two new adapter tests |
+| Client `cargo clippy --lib --bin horizon-client --no-default-features --features native-mods --offline -- -D warnings` after creative changes | PASS |
+| Narrow rustfmt for all changed Rust files; `git diff --check`; `python3 tools/check_public_tree.py` | PASS |
+| `cargo build -p horizon-client --bin horizon-client --no-default-features --features native-mods --offline` | PASS |
+| Real client `--offscreen --frames 2` in fresh temporary working/home/XDG/launcher paths | Window smoke BLOCKED: resources loaded, native init/metadata/shutdown logged; exit 1, `Could not find wayland compositor` |
+| Full Java differential parity | NOT RUN: optional; complete Java SDK still unavailable. Existing harnesses preserved |
+| Live native item/icon, old-save/native content and LAN mismatch checks | NOT RUN: persistent native content is not activated by this increment |
+
+All executable game tests/runs used scratch `HORIZON_HOME`, launcher and XDG
+paths with self-update/audio disabled; no real saves/settings were used. The
+real-client attempt read privately prepared resources in place, copied no assets
+into test fixtures and published no resource files. Unit fixtures are synthetic.
+No source-mixin hook body, WASM runtime, item storage, save or packet code changed.
+The binary regression suites include the upstream source-mixin hookability tests.
+
+Limits / next smallest step: the existing screen is wired and asset-free draw/
+click/back/scroll paths are exercised, but no actual rendered window has passed.
+The linked example pack still contains Hello only; two independent mods are
+covered in runtime/projection and presentation tests, not a two-mod window run.
+`Creative::append_tabs` has no production caller yet. It preserves existing tab
+positions and merges search, rejects ID collisions and special tabs atomically,
+and explicitly rejects overflow of the fixed 2x7 layout. Native title-key/icon
+resolution and pagination remain pending. Pass one frozen snapshot through
+resource startup/reload, validate templates and IDs using the existing resource
+architecture, then add the sample native item/tab with storage/render/mismatch
+acceptance. Mutable native configuration needs a public API contract.
+**Phase 2 gate remains OPEN. Phase 3 and Create were not started.**
+
+
+## Previous increment — commit policy and phase 2 list/details data adapter
 
 Root `AGENTS.md` now mandates one completed engineering step per Conventional
 Commit, explicit staging, preservation of existing changes/history, relevant

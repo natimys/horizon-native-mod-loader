@@ -122,3 +122,56 @@ Creative follow-up: audit resource overlay construction and tab positioning befo
 inserting native descriptors. Existing `Tab` is data-driven, but `tab_position`
 assumes columns 0..6; pagination/collision validation is necessary. New persistent
 items remain gated by template/render/storage and multiplayer mismatch checks.
+
+## Phase 2 catalog integration implemented
+
+`ModList::catalog` / `CatalogMod` now carry read-only, font-wrapped records.
+`OptionsUi::Page::ModDetails` shares the existing widgets, scrolling and navigation.
+`Game::open_options_at` replaces catalog rows from `NativeRuntime::catalog()` using
+`native_catalog::rows`; source-mixin and WASM installed vectors are untouched.
+The optional native-ui Cargo dependency is cfg-elided with native-mods off.
+Server runtime snapshots return None; state is explicitly runtime-wide, while
+selection and dependency availability remain separate. No native settings contract
+exists yet, so catalog entries expose details only.
+
+### Next creative insertion plan
+
+Implement a generic `creative.rs::Creative::append_tabs(Vec<Tab>)` first: consume
+ordinary engine Tab data, deterministically allocate only vacant vanilla tab
+positions, merge category members into existing search, reject duplicate IDs,
+special-tab redefinition and capacity overflow atomically. Existing vanilla
+layout and search remain untouched when no tabs are appended. This is a narrow
+existing-menu adapter, needed by any resource/native tab producer; adding tabs
+by editing individual engine match arms is not viable. Validate with synthetic
+(non-Mojang) tab/item names, empty tabs, localization/search, collisions and no-op.
+
+| File / entry point | Reason | Alternative considered | Test |
+|---|---|---|---|---|
+| `horizon-client/src/creative.rs::Creative::append_tabs` | Generic additive category/search adapter with collision-free placement | Raw `tabs.push` omits search indexing and can overlap fixed tab buttons | Deterministic two producers, atomic failures, vanilla no-op, search |
+
+This bounded adapter must report capacity overflow; pagination is still pending.
+Do not expose a new takeable item in a world yet. `mods::content_root` runs before
+`load_resources` in synchronous startup, `startup_menu` worker and pack reload.
+The native runtime currently freezes in Game::new AFTER those resource loads;
+thus a proper native item overlay requires passing one frozen snapshot through
+these existing loading paths, not constructing another runtime for resources.
+`mod_content::build` appends network item IDs, and `Content` currently owns a
+package source, so neither is a drop-in native descriptor adapter. New stable
+items need template/icon/storage/old-save and mismatch checks before activation.
+
+### Creative adapter implemented and remaining handoff
+
+`Creative::append_tabs` is now implemented, with 17 creative tests passing. The
+engine ledger row above describes the actual edit. It has no production caller
+yet: native descriptors are NOT silently converted into takeable items, and no
+world/save/network behavior changes. The first native overlay must resolve every
+item template/icon before calling this boundary, and pass native title keys to
+the existing language lookup. It must fail atomically on collision or capacity.
+
+Engine commits this increment (inclusive): `1f92f3e8b`–`859e73057`.
+`e79d9f260` is the explicitly authorized, separate pre-existing phase 1 baseline;
+new work is `1f92f3e8b`, `74cfb34af`, `859e73057`. No changes to existing
+`native_hooks.rs`, WASM loader, item storage, save files or network packets.
+Actual client startup/shutdown passed with isolated paths; window creation failed
+with `Could not find wayland compositor`. This does not satisfy rendered UI
+acceptance. Phase 2 remains OPEN and phase 3/Create remain unstarted.

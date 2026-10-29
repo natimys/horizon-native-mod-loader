@@ -1,8 +1,8 @@
 # Native, compile-time Horizon mods — architecture contract
 
-Status: **experimental core/lifecycle, descriptor registry and independent mod list/details adapter implemented**. Version 3 / 2026-10-30.
+Status: **experimental core/lifecycle, descriptor registry and independent mod list/details adapter implemented**. Version 4 / 2026-10-30.
 
-The independent native workspace and opt-in Game-owned startup/shutdown bridge are implemented. The standalone descriptor registry and UI data adapter are implemented; rendered engine UI, content adapters, gameplay, save/network sync and ecosystem capabilities remain staged. See `VALIDATION.md` and `HORIZON_INTEGRATION_MAP.md`. The phase 1 gate checks existing Horizon regressions and public API contracts; full Minecraft Java differential parity is optional under the explicit decision in `ROADMAP.md`. JDK 25 is not required solely for that diagnostic.
+The independent native workspace and opt-in Game-owned startup/shutdown bridge are implemented. The descriptor registry and UI data adapter are implemented; the latter now supplies the existing Horizon Mods list/details screen. Generic creative category insertion is implemented, while native resource adaptation, gameplay, save/network sync and ecosystem capabilities remain staged. See `VALIDATION.md` and `HORIZON_INTEGRATION_MAP.md`. The phase 1 gate checks existing Horizon regressions and public API contracts; full Minecraft Java differential parity is optional under the explicit decision in `ROADMAP.md`. JDK 25 is not required solely for that diagnostic.
 
 ## Existing Horizon — verify against local checkout
 
@@ -147,3 +147,21 @@ must add generic read-only rows/details to the actual Options UI, supply snapsho
 through the client bridge and preserve WASM and source-mixin behavior. Settings
 require a separate public configuration contract; content still requires resource,
 save and network validation before entering worlds.
+
+## Phase 2 Horizon presentation / creative adapter
+
+The host maps `ModListView` into `ModList::catalog` records and the existing
+Options UI renders their list/details. Its mutable `installed` collection, WASM
+owner indices and source-mixin toggle/settings path are unchanged. Font-wrapped
+details show metadata, exact dependency availability, host selection and the
+explicitly runtime-wide state. Catalog refresh never constructs mods, runs hooks
+or persists enable/disable lines. Native configuration requires a future public
+contract; there is no fabricated Settings button. Server hosts produce no view.
+
+`Creative::append_tabs` is a generic host-side category/search insertion boundary,
+not yet wired to native content. It sorts new tabs by stable ID, allocates vacant
+positions in the existing 2x7 layout, retains existing positions and search
+components, and rejects duplicates/special tabs/overflow before mutation. Empty
+categories are allowed. The future native resource adapter must validate actual
+item/icon IDs and translate title keys before calling it; no new persistent
+items are active. Pagination and resource freeze handoff remain phase 2 work.
