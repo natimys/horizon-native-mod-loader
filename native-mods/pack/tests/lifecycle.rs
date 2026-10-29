@@ -26,3 +26,22 @@ fn zero_mod_lifecycle_has_no_actions_or_callbacks() {
     assert!(runtime.shutdown().actions.is_empty());
     assert_eq!(create_runtime().unwrap().metadata().len(), 1);
 }
+
+#[test]
+fn hello_declares_real_item_and_original_resources_before_setup() {
+    let mut runtime = horizon_native_pack::create_runtime().unwrap();
+    runtime.freeze().unwrap();
+    let item = "hello_mod:token".parse().unwrap();
+    let tab = "hello_mod:hello".parse().unwrap();
+    assert_eq!(runtime.content().tabs[&tab].items, [item]);
+    assert_eq!(runtime.content().items.len(), 1);
+    assert_eq!(runtime.content().resources.len(), 5);
+    assert!(
+        runtime.content().resources["assets/hello_mod/textures/item/token.png"]
+            .starts_with(b"\x89PNG")
+    );
+    let snapshot = runtime.content().clone();
+    runtime.initialize().unwrap();
+    assert_eq!(runtime.content(), &snapshot);
+    assert!(runtime.shutdown().errors.is_empty());
+}
