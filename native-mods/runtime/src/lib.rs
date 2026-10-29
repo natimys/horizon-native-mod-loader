@@ -7,6 +7,10 @@ use horizon_native_api::{
 use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Arc;
 
+use horizon_native_api::{
+    GameplayContext, GameplayEvent, GameplaySubscriptions, ModSide as Side, QueuedAction,
+};
+
 mod content;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -98,6 +102,7 @@ pub struct Runtime {
     mods: Vec<Entry>,
     compiled: Vec<CompiledMod>,
     tick_subscribers: Vec<usize>,
+    gameplay: Vec<(usize, GameplaySubscriptions)>,
     started: usize,
     side: HostSide,
     state: State,
@@ -192,6 +197,7 @@ impl Runtime {
             mods: ordered,
             compiled,
             tick_subscribers: Vec::new(),
+            gameplay: Vec::new(),
             started: 0,
             side,
             state: State::Resolved,
@@ -265,6 +271,13 @@ impl Runtime {
             if let Err(reason) = self.mods[i].module.register(&mut context) {
                 return Err(self.fail(i, "register", reason));
             }
+            let subscriptions = context.gameplay_subscriptions();
+            if subscriptions.any()
+                && self.mods[i].metadata.side != Side::Client
+                && self.side != HostSide::Client
+            {
+                self.gameplay.push((i, subscriptions));
+            }
             if context.has_tick_subscription() {
                 self.tick_subscribers.push(i);
             }
@@ -318,6 +331,38 @@ impl Runtime {
         for j in 0..self.tick_subscribers.len() {
             let i = self.tick_subscribers[j];
             self.call(i, "tick", |m, c| m.tick(tick, c), &mut actions)?;
+        }
+        Ok(actions)
+    }
+
+    pub fn has_gameplay_subscribers(&self) -> bool {
+        !self.gameplay.is_empty()
+    }
+
+    /// Dependency/ID order. All actions are returned only after every callback
+    /// succeeds. Any error discards this entire event batch and stops the runtime.
+    /// A client-only host never invokes gameplay callbacks.
+    pub fn dispatch(&mut self, event: &GameplayEvent) -> Result<Vec<QueuedAction>, LoaderError> {
+        if self.state != State::Running {
+            return Err(LoaderError::InvalidState(self.state));
+        }
+        let mut actions = Vec::new();
+        for j in 0..self.gameplay.len() {
+            let (i, subscription) = self.gameplay[j];
+            if !subscription.accepts(event) {
+                continue;
+            }
+            let mut context = GameplayContext::new();
+            if let Err(reason) = self.mods[i].module.gameplay(event, &mut context) {
+                return Err(self.fail(i, "gameplay", reason));
+            }
+            let batch = context
+                .finish()
+                .map_err(|reason| self.fail(i, "gameplay", reason))?;
+            actions.extend(batch.into_iter().map(|action| QueuedAction {
+                mod_id: self.mods[i].metadata.id,
+                action,
+            }));
         }
         Ok(actions)
     }

@@ -2,10 +2,12 @@
 #![forbid(unsafe_code)]
 
 mod content;
+mod gameplay;
 pub use content::{
     BlockDescriptor, ContentSnapshot, CreativeTabDescriptor, ItemDescriptor, RecipeDescriptor,
     ResourceId,
 };
+pub use gameplay::*;
 use std::sync::Arc;
 
 pub const API_VERSION: u32 = 1;
@@ -49,6 +51,7 @@ pub fn valid_mod_id(id: &str) -> bool {
 #[derive(Default)]
 pub struct LoadContext {
     tick: bool,
+    gameplay: GameplaySubscriptions,
     items: Vec<ItemDescriptor>,
     blocks: Vec<BlockDescriptor>,
     recipes: Vec<RecipeDescriptor>,
@@ -57,6 +60,13 @@ pub struct LoadContext {
 }
 
 impl LoadContext {
+    pub fn subscribe_gameplay(&mut self, subscriptions: GameplaySubscriptions) {
+        self.gameplay = subscriptions;
+    }
+    pub fn gameplay_subscriptions(&self) -> GameplaySubscriptions {
+        self.gameplay
+    }
+
     pub fn subscribe_tick(&mut self) {
         self.tick = true;
     }
@@ -172,6 +182,13 @@ pub trait NativeMod: Send {
         Ok(())
     }
     fn tick(&mut self, _tick: u64, _context: &mut ModContext) -> Result<(), String> {
+        Ok(())
+    }
+    fn gameplay(
+        &mut self,
+        _event: &GameplayEvent,
+        _context: &mut GameplayContext,
+    ) -> Result<(), String> {
         Ok(())
     }
     fn shutdown(&mut self, _context: &mut ModContext) -> Result<(), String> {
