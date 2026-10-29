@@ -1,3 +1,11 @@
+# Latest phase 3 evidence
+
+Phase 3 gate is **CLOSED / PASS** for its bounded gameplay API. See
+[PHASE3_VALIDATION.md](PHASE3_VALIDATION.md) for current contracts, exact engine
+changes, real integrated/in-frame/LAN/dedicated tests, save/restart and mismatch
+checks, atomic commits and the independently reproduced baseline GPU-test failure.
+The phase 2 evidence below is historical and remains valid for that stage.
+
 # Latest phase 2 real-item validation — 2026-10-30
 
 This section supersedes earlier "content not integrated" and compositor-blocked

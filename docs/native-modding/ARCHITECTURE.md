@@ -1,13 +1,14 @@
 # Native, compile-time Horizon mods — architecture contract
 
-Status: **experimental metadata/lifecycle, embedded resources and real static items
-integrated**. Version 5 / 2026-10-30.
+Status: **experimental native gameplay registries and authoritative snapshot/action
+bridge implemented**. Version 6 / 2026-10-30.
 
 The opt-in native path now supplies Horizon's existing Content/resource loaders and
 Creative UI. Registration freezes before resources load; the same registered
 instance performs setup, with a common immutable snapshot shared by client/server
 resource consumers. Each Game still owns its own lifecycle. Mods depend only on
-the std-only public API. No native gameplay tick hooks or Create port exist.
+the std-only public API. Gameplay callbacks receive owned authoritative snapshots;
+deferred actions use existing checked host operations. No Create port exists.
 
 Resource/model/template/translation failures stop activation. Save IDs remain
 namespaced strings; protocol mapping uses the existing registry adapter and an
@@ -15,7 +16,8 @@ exact static-content KnownPack check before play. Native settings, dynamic/speci
 item models, creative pagination and registry remapping remain unsupported. See
 native-mods/README.md for the concrete public contract, VALIDATION.md for actual
 checks and HORIZON_INTEGRATION_MAP.md for every engine insertion. Phase 2 gate is
-CLOSED / PASS for read-only UI and static-item content; no phase 3 work has begun. Full Java differential parity is
+CLOSED / PASS for read-only UI and static-item content. Phase 3 evidence is recorded
+separately in PHASE3_VALIDATION.md. Full Java differential parity is
 optional under ROADMAP.md; existing Horizon regressions remain blockers.
 
 ## Existing Horizon — verify against local checkout
@@ -180,3 +182,31 @@ vacant positions in the existing 2x7 layout, preserves existing positions/search
 components, and rejects duplicates/special tabs/overflow before mutation. Empty
 categories are allowed. The native resource adapter resolves item/icon resources
 and title keys before exposing the resulting root. Pagination remains future work.
+
+
+## Phase 3 bounded implementation
+
+Frozen registries now cover blocks (vanilla static templates), shapeless recipes,
+owned namespaced zero-argument commands and versioned integer-field entities on
+single-state blocks. `native_content` translates into the existing content/data
+loaders and command/registry reports. `BlockEntity::Extension` is a generic data
+variant, carrying no concrete mod type; ordinary save and chunk/update packets
+retain it. Required static pack identity includes gameplay declarations. World
+requirements persist stable names/schema versions and refuse missing content
+before world migrations or chunk reads; additive composition remains valid.
+
+`NativeMod::gameplay`/`GameplayContext` use owned snapshots/actions, with opt-in
+subscriptions. Only the authoritative Game dispatches (server thread, in-frame,
+LAN or dedicated); remote windows never execute gameplay callbacks. Concrete
+behavior lives in the optional external Workshop crate. Host `place_state` owns
+all native block writes, and the generic bridge owns entity schema/owner checks,
+loaded-position checks, queue limits and deterministic ordering. No WASM runtime,
+source-mixin hooks, renderer algorithms, network packet layouts or vanilla rules
+were replaced. Exact entrypoints and alternatives are in the integration ledger;
+ordering, error semantics and limitations are specified in native-mods/README.md.
+
+This phase supplies a small functioning gameplay example, not a general machine,
+custom renderer, block-entity inventory, runtime content remapping or migration
+system. Those additions need separate public API proposals and tests. Settings,
+Creative capacity and dynamic models were not prerequisites and were not added.
+Create remains deferred.

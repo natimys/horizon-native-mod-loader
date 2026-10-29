@@ -7,7 +7,11 @@ Each phase ends with working code + tests + a brief audit of changed engine line
 - Phase 0: local source audit and insertion ledger written in `HORIZON_INTEGRATION_MAP.md`.
 - Phase 1: **gate CLOSED / PASS** against the mandatory Horizon regression/API criteria below. See `VALIDATION.md` for the evidence matrix. Full Minecraft Java parity is optional.
 - Phase 2: **gate CLOSED / PASS** for the read-only Mods list/details and real static-item/creative slice. Embedded original resources feed the existing Horizon loaders; two independent API-only mods were rendered together. Real inventory/save/restart, one-to-two-mod ID migration, a pre-native vanilla world, resource reload and TCP mismatch refusal passed. See VALIDATION.md and PHASE2_SMOKE_TEST.md. Mutable native settings, dynamic models and creative pagination remain unsupported; no such capability is claimed by this gate.
-- Phases 3–5: not started. No Create port work; complete the base Mod API first.
+- Phase 3: **gate CLOSED / PASS** for bounded gameplay snapshots/actions, blocks,
+  shapeless recipes, versioned integer-field block entities and namespaced
+  commands. Actual integrated/in-frame/LAN/dedicated scenarios and save/restart
+  passed; see PHASE3_VALIDATION.md for results and inherited GPU-test failure.
+- Phases 4–5: not started. No Create port work.
 
 ## Validation policy — decision of 2026-10-30
 
@@ -80,6 +84,22 @@ Create remain unstarted in this iteration.
 - Validate save/reload, LAN/dedicated-server registry sync, mod dependency errors, and graceful mismatch handling.
 
 **Gate:** Minimal example gameplay mod works end-to-end on both client and server.
+
+**2026-10-30 acceptance: PASS.** Optional API-only Workshop works through the
+public contracts in real offscreen clients and authoritative integrated, in-frame,
+LAN and dedicated modes. Checked placement, actual crafting UI, player callbacks,
+versioned data persistence, late join/live updates and mismatch refusal passed.
+All registrations freeze before world entry. Existing Horizon off/on suites,
+combined WASM checks and WASM runtime tests pass. Parallel renderer GPU tests
+have the same SIGSEGV on the original phase 2 baseline; the serial renderer suite
+passes. Exact evidence, commits and limitations: PHASE3_VALIDATION.md.
+
+Initial contracts deliberately cover shapeless explicit-item recipes,
+zero-argument player commands and single-state block entities with bounded signed
+integer fields. Existing resource/Creative limits stay in place. No settings,
+Creative expansion, dynamic models, automatic schema migration or Create is
+required or claimed by this gate. Phase 4 is the next smallest roadmap stage.
+
 
 ## Phase 4 — Ecosystem & toolchain
 

@@ -318,7 +318,7 @@ VALIDATION.md records the stage ranges. Existing untracked user files are preser
 ## Phase 3 audit and bounded implementation plan — 2026-10-30
 
 Phase 2 baseline reviewed: outer bf77a3a, Horizon fd7316fd1. Horizon working
- tree is clean; outer untracked .agents/, .codex/, README-SETUP.md and
+ tree is clean; outer untracked .agents/, .codex/, README-SETUP.md and upstream
 horizon_official_server.txt are pre-existing user files. `gh pr list --repo
 horizon-rust/horizon --state open --search 'native mod'` failed (network access).
 No upstream API is inferred from the online branch.
@@ -435,3 +435,54 @@ Exact additional engine entries / alternatives / tests:
 
 These are generic storage/adapter contracts; no concrete gameplay mod is imported
 by Horizon. Real save/late-join/update acceptance remains pending until recorded.
+
+Save compatibility audit follow-up: block palettes persist names, but the existing
+chunk decoder cannot retain simulation semantics for missing blocks. Phase 3's
+save/reload/mismatch requirement therefore also needs a conservative world-entry
+check. Proposed minimal insertion: generic required-content names/schema versions
+in the existing resource identity marker; `registry_pack` reads/validates a world
+manifest, and `WorldRequest::prepare` checks it before migrations/chunk reads,
+records it after the existing session lock. Alternative silent missing-name
+fallback risks destructive saves. No transient integers are persisted. Additions
+are compatible; removing registered content or changing entity schema is refused
+explicitly (migration is outside this phase). Native-disabled worlds with no
+manifest keep their existing path. Tests: missing/default/additive/schema cases,
+actual restart and a no-native refusal without touching the saved chunk data.
+
+Real smoke exposed a console-only route missing native dispatch although the
+player chat/network command worked: `Game::run_command` must also invoke the
+owner dispatcher, respecting `lan_acting_uuid`. This serves agent/owner console
+commands through the same public contract. `agent::block_json` gains generic
+extension data, analogous to existing sign inspection, to verify actual client
+initial/update packets without querying server state. No mod IDs in either hook.
+
+
+Phase 3 real same-home restart found and fixed cached type re-insertion:
+`native_content::resource_root` must derive block-entity types from the immutable
+base table before appending descriptors, because `mod_content::resource_root`
+may return an already populated cache. Registry mappings/digest now remain
+identical over repeated calls; the synthetic adapter test exercises this exact
+reuse. This is a host adapter correction, with no extra engine insertion.
+
+Final boundary review found that the existing `BlockEntity::for_block` recognizes
+some container suffixes across namespaces. `native_gameplay::initialize_entity`
+now gives a freshly placed registered schema priority over that template fallback,
+while retaining existing extension payloads. A bin test constructs the real
+suffix fallback, verifies replacement by the registered schema, then checks that
+a subsequent initialization preserves a non-default value. This adds no engine
+insertion; it corrects ownership within the existing generic initializer.
+
+
+## Phase 3 delivered gate
+
+Gate CLOSED / PASS. PHASE3_VALIDATION.md contains every commit, final test counts,
+real crafting/block events, integrated/in-frame/LAN/dedicated save/restart and
+packet mismatch evidence, no-native world refusal, F3+T and Mods UI acceptance.
+Parallel renderer GPU tests reproduce the same SIGSEGV in phase 2 fd7316fd1;
+current serial renderer tests pass (526/15 ignored). Final engine stage range:
+83281aeae–f84396c94 inclusive (11 atomic commits). No WASM implementation,
+source-mixin native_hooks.rs, vanilla renderer algorithm or protocol packet layout
+was changed. Source-only baseline comparison used a temporary Git archive,
+without private resources or personal saves. All actual games used scratch homes.
+Root tooling: 9ad817f; the outer stage starts at d46c5f3. No push. Next smallest
+roadmap stage is phase 4; no Create work was performed.
