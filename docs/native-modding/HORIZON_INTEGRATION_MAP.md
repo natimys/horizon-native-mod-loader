@@ -218,3 +218,29 @@ horizon_official_server.txt are user-owned and excluded from commits. No remote 
 configured in upstream, so `gh pr list` cannot inspect concurrent upstream PRs.
 Network mismatch handling must be audited before claiming external multiplayer
 compatibility; the default integrated server also uses protocol item IDs.
+
+### Static item protocol compatibility insertion
+
+Observed: `lan::data::SyncData::builtin` and `game::remote::join_server` load
+`horizon-protocol::registry::Builtin` from registries.json. Item IDs are NOT a
+synchronized dynamic registry. `net::configure` currently answers no known packs;
+`lan::conn::login_and_configure` only offers vanilla core. Thus different static
+content could reinterpret the same integer. A native item must require an exact
+static-content identity before configuration finishes, including memory joins.
+
+| File / entry point | Reason | Alternative considered | Test |
+|---|---|---|---|
+| `horizon-client/src/registry_pack.rs` (new), `lib.rs` | Generic optional static-content KnownPack read/validation contract | Native-specific packet or duplicated item ID tables unnecessary | Equal/different/absent identities and malformed marker |
+| `horizon-client/src/native_content.rs::resource_root` | Emit deterministic registry/content identity using existing KnownPack mechanism | Runtime ID order alone cannot detect incompatible peers | Reversed public registration gives same identity |
+| `horizon-client/src/lan/data.rs::SyncData`, `lan/conn.rs::login_and_configure` | Offer required static-content pack; refuse absent/different confirmation before play | Letting an unmatched client join risks wrong item interpretation | Synthetic handshake refusal plus matching memory join |
+| `horizon-client/src/net.rs::Session/configure`, `game/remote.rs::join_server` | Pass resource identity into connection; compare server pack before play/reconfiguration | Global mutable identity breaks independent sessions | Default wrappers unchanged; token mismatch tests; feature-off suite |
+
+This is phase 2 item identity validation, not phase 3 gameplay hooks or registry
+synchronization. Peers must have matching static content; no download or numeric
+remapping is offered. Empty/native-disabled roots emit no marker or requirement.
+
+Implemented generic creative resource reader: upstream `30cc874de`, 18 creative
+tests PASS. Descriptor/resource adapter: `4af7b388b`, 3 synthetic tests PASS; no
+prepared/player assets in fixtures. First static-model adapter supports plain
+model leaves, inheritance, generated icons and ordinary PNG textures. Dynamic or
+special models fail explicitly until separately validated.
