@@ -367,6 +367,45 @@ impl Runtime {
         Ok(actions)
     }
 
+    pub fn has_commands(&self) -> bool {
+        self.side != HostSide::Client && !self.content.commands.is_empty()
+    }
+
+    /// None means unowned. Only the owning mod receives a registered command.
+    pub fn command(
+        &mut self,
+        id: &horizon_native_api::ResourceId,
+        player: &horizon_native_api::PlayerSnapshot,
+    ) -> Option<Result<Vec<QueuedAction>, LoaderError>> {
+        if !self.has_commands() || !self.content.commands.contains_key(id) {
+            return None;
+        }
+        Some((|| {
+            if self.state != State::Running {
+                return Err(LoaderError::InvalidState(self.state));
+            }
+            let i = self
+                .mods
+                .iter()
+                .position(|m| m.metadata.id == id.namespace())
+                .expect("registered command owner");
+            let mut context = GameplayContext::new();
+            if let Err(reason) = self.mods[i].module.command(id, player, &mut context) {
+                return Err(self.fail(i, "command", reason));
+            }
+            let batch = context
+                .finish()
+                .map_err(|reason| self.fail(i, "command", reason))?;
+            Ok(batch
+                .into_iter()
+                .map(|action| QueuedAction {
+                    mod_id: self.mods[i].metadata.id,
+                    action,
+                })
+                .collect())
+        })())
+    }
+
     /// Reverse dependency order, all cleanup attempted, once, including partial startup.
     pub fn shutdown(&mut self) -> ShutdownReport {
         let mut report = ShutdownReport::default();

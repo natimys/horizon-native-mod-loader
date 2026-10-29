@@ -4,8 +4,8 @@
 mod content;
 mod gameplay;
 pub use content::{
-    BlockDescriptor, ContentSnapshot, CreativeTabDescriptor, ItemDescriptor, RecipeDescriptor,
-    ResourceId,
+    BlockDescriptor, CommandDescriptor, ContentSnapshot, CreativeTabDescriptor, ItemDescriptor,
+    RecipeDescriptor, ResourceId,
 };
 pub use gameplay::*;
 use std::sync::Arc;
@@ -55,6 +55,7 @@ pub struct LoadContext {
     items: Vec<ItemDescriptor>,
     blocks: Vec<BlockDescriptor>,
     recipes: Vec<RecipeDescriptor>,
+    commands: Vec<CommandDescriptor>,
     tabs: Vec<CreativeTabDescriptor>,
     resources: Vec<(String, Vec<u8>)>,
 }
@@ -87,6 +88,10 @@ impl LoadContext {
         self.recipes.push(recipe);
     }
 
+    pub fn register_command(&mut self, command: CommandDescriptor) {
+        self.commands.push(command);
+    }
+
     pub fn register_tab(&mut self, tab: CreativeTabDescriptor) {
         self.tabs.push(tab);
     }
@@ -109,6 +114,7 @@ impl LoadContext {
             items: self.items,
             blocks: self.blocks,
             recipes: self.recipes,
+            commands: self.commands,
             tabs: self.tabs,
             resources: self.resources,
         }
@@ -120,6 +126,7 @@ pub struct ContentDeclarations {
     pub items: Vec<ItemDescriptor>,
     pub blocks: Vec<BlockDescriptor>,
     pub recipes: Vec<RecipeDescriptor>,
+    pub commands: Vec<CommandDescriptor>,
     pub tabs: Vec<CreativeTabDescriptor>,
     pub resources: Vec<(String, Vec<u8>)>,
 }
@@ -182,6 +189,14 @@ pub trait NativeMod: Send {
         Ok(())
     }
     fn tick(&mut self, _tick: u64, _context: &mut ModContext) -> Result<(), String> {
+        Ok(())
+    }
+    fn command(
+        &mut self,
+        _command: &ResourceId,
+        _player: &PlayerSnapshot,
+        _context: &mut GameplayContext,
+    ) -> Result<(), String> {
         Ok(())
     }
     fn gameplay(

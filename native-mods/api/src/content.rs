@@ -83,6 +83,13 @@ pub struct RecipeDescriptor {
     pub count: u8,
 }
 
+/// A namespaced, zero-argument server command. Vanilla and WASM roots are
+/// never shadowed; no permission escalation or arbitrary command execution.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CommandDescriptor {
+    pub id: ResourceId,
+}
+
 /// Runtime publishes one snapshot after validating every declaration.
 /// Callbacks can read it via `ModContext`, never mutate the runtime's registry.
 /// Maps iterate by stable resource name; item and tab namespaces are separate.
@@ -91,6 +98,7 @@ pub struct ContentSnapshot {
     pub items: BTreeMap<ResourceId, ItemDescriptor>,
     pub blocks: BTreeMap<ResourceId, BlockDescriptor>,
     pub recipes: BTreeMap<ResourceId, RecipeDescriptor>,
+    pub commands: BTreeMap<ResourceId, CommandDescriptor>,
     pub tabs: BTreeMap<ResourceId, CreativeTabDescriptor>,
     /// Original embedded resource files, ordered by their canonical path.
     pub resources: BTreeMap<String, Vec<u8>>,

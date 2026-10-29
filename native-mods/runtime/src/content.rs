@@ -10,6 +10,7 @@ pub(super) fn collect(
         items,
         blocks,
         recipes,
+        commands,
         tabs,
         resources,
     } = context.into_declarations();
@@ -17,6 +18,7 @@ pub(super) fn collect(
         && (!items.is_empty()
             || !blocks.is_empty()
             || !recipes.is_empty()
+            || !commands.is_empty()
             || !tabs.is_empty()
             || !resources.is_empty())
     {
@@ -84,6 +86,16 @@ pub(super) fn collect(
         let id = recipe.id.clone();
         if content.recipes.insert(id.clone(), recipe).is_some() {
             return Err(format!("duplicate recipe ID {id}"));
+        }
+    }
+    for command in commands {
+        check(&command.id, "command")?;
+        if command.id.as_str().contains('/') {
+            return Err(format!("{}: command ID must be flat", command.id));
+        }
+        let id = command.id.clone();
+        if content.commands.insert(id.clone(), command).is_some() {
+            return Err(format!("duplicate command ID {id}"));
         }
     }
     for tab in tabs {

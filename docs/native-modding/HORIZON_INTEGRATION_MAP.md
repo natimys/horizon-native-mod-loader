@@ -377,3 +377,25 @@ before setup on all three host sides. Engine edit is limited to
 require real vanilla templates and own translations, include blocks in identity.
 Synthetic table test checks unchanged vanilla IDs, appended block/item mapping,
 translation alias and missing-template refusal. No world/save/renderer edit yet.
+
+Milestone 2 implemented: `RecipeDescriptor/register_recipe`, freeze validation
+(counts, duplicates, references and declared dependencies); native_content emits
+ordinary shapeless recipe JSON, loads `Items::catalog` + `Recipes::load` and
+refuses unknown items/oversized output before world load. Seven adapter tests
+PASS, including actual `Recipes::find` on a 2x2 grid. Engine commits 83281aeae
+(blocks) and 1e39734ce (recipes); no crafting implementation edits.
+
+Milestone 3 insertion implemented in `game/native_gameplay.rs` and existing
+`game/native_api.rs`: runtime-owned event/player/action queues; `game.rs`
+post-success player block callsites and `tick_world` end dispatch snapshots.
+`finish_close_world` clears session queues. No edits to native_hooks.rs or
+server_mods.rs. World ticks pause with the simulation; player joins/leaves are
+UUID-sorted before queued player-block events, then world snapshot, then actions.
+Only authoritative Games dispatch. Each callback batch is fail-stop/all-or-none
+on callback or public queue validation errors; host preflights current queued
+states/dimensions/loaded positions before writes. Engine write failures are
+reported individually (ordinary gameplay writes do not promise rollback).
+Cross-dimension writes wait for that dimension's pass; bounded queues fail-stop
+on overflow. Mods receive no engine objects. Native binary tests: 159 PASS,
+3 upstream ignored; native gameplay runtime tests: 2 PASS. Actual scenario
+acceptance is still pending; these checks alone do not close phase 3.
