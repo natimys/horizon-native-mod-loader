@@ -9,11 +9,16 @@ pub(super) fn collect(
     let horizon_native_api::ContentDeclarations {
         items,
         blocks,
+        recipes,
         tabs,
         resources,
     } = context.into_declarations();
     if metadata.side != horizon_native_api::ModSide::Common
-        && (!items.is_empty() || !blocks.is_empty() || !tabs.is_empty() || !resources.is_empty())
+        && (!items.is_empty()
+            || !blocks.is_empty()
+            || !recipes.is_empty()
+            || !tabs.is_empty()
+            || !resources.is_empty())
     {
         return Err(format!("{owner}: persistent content requires a common mod"));
     }
@@ -64,6 +69,23 @@ pub(super) fn collect(
             return Err(format!("duplicate block/item ID {id}"));
         }
     }
+    for recipe in recipes {
+        check(&recipe.id, "recipe")?;
+        if recipe.id.as_str().contains('/')
+            || !(1..=9).contains(&recipe.ingredients.len())
+            || recipe.count == 0
+            || recipe.count > 64
+        {
+            return Err(format!(
+                "{}: recipe needs a flat ID, 1..9 ingredients and 1..64 result count",
+                recipe.id
+            ));
+        }
+        let id = recipe.id.clone();
+        if content.recipes.insert(id.clone(), recipe).is_some() {
+            return Err(format!("duplicate recipe ID {id}"));
+        }
+    }
     for tab in tabs {
         check(&tab.id, &tab.translation_key)?;
         let id = tab.id.clone();
@@ -100,6 +122,38 @@ pub(super) fn validate<'a>(
             };
             if let Some(reason) = problem {
                 return Err((owner.to_owned(), reason));
+            }
+        }
+    }
+    for recipe in content.recipes.values() {
+        let owner = recipe.id.namespace();
+        for item in recipe
+            .ingredients
+            .iter()
+            .chain(std::iter::once(&recipe.result))
+        {
+            if item.namespace() == "minecraft" {
+                continue;
+            }
+            if !content.items.contains_key(item) && !content.blocks.contains_key(item) {
+                return Err((
+                    owner.into(),
+                    format!("recipe {} references missing item {item}", recipe.id),
+                ));
+            }
+            if item.namespace() != owner
+                && !mods[owner]
+                    .dependencies
+                    .iter()
+                    .any(|d| d.id == item.namespace())
+            {
+                return Err((
+                    owner.into(),
+                    format!(
+                        "recipe {} references {item} without a declared dependency",
+                        recipe.id
+                    ),
+                ));
             }
         }
     }

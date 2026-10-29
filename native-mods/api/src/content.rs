@@ -73,6 +73,16 @@ pub struct CreativeTabDescriptor {
     pub items: Vec<ResourceId>,
 }
 
+/// Initial recipe contract: one explicit item per occupied crafting slot,
+/// shapeless, at most nine slots. Host validates all item IDs and stack limits.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RecipeDescriptor {
+    pub id: ResourceId,
+    pub ingredients: Vec<ResourceId>,
+    pub result: ResourceId,
+    pub count: u8,
+}
+
 /// Runtime publishes one snapshot after validating every declaration.
 /// Callbacks can read it via `ModContext`, never mutate the runtime's registry.
 /// Maps iterate by stable resource name; item and tab namespaces are separate.
@@ -80,6 +90,7 @@ pub struct CreativeTabDescriptor {
 pub struct ContentSnapshot {
     pub items: BTreeMap<ResourceId, ItemDescriptor>,
     pub blocks: BTreeMap<ResourceId, BlockDescriptor>,
+    pub recipes: BTreeMap<ResourceId, RecipeDescriptor>,
     pub tabs: BTreeMap<ResourceId, CreativeTabDescriptor>,
     /// Original embedded resource files, ordered by their canonical path.
     pub resources: BTreeMap<String, Vec<u8>>,

@@ -3,7 +3,8 @@
 
 mod content;
 pub use content::{
-    BlockDescriptor, ContentSnapshot, CreativeTabDescriptor, ItemDescriptor, ResourceId,
+    BlockDescriptor, ContentSnapshot, CreativeTabDescriptor, ItemDescriptor, RecipeDescriptor,
+    ResourceId,
 };
 use std::sync::Arc;
 
@@ -50,6 +51,7 @@ pub struct LoadContext {
     tick: bool,
     items: Vec<ItemDescriptor>,
     blocks: Vec<BlockDescriptor>,
+    recipes: Vec<RecipeDescriptor>,
     tabs: Vec<CreativeTabDescriptor>,
     resources: Vec<(String, Vec<u8>)>,
 }
@@ -69,6 +71,10 @@ impl LoadContext {
 
     pub fn register_block(&mut self, block: BlockDescriptor) {
         self.blocks.push(block);
+    }
+
+    pub fn register_recipe(&mut self, recipe: RecipeDescriptor) {
+        self.recipes.push(recipe);
     }
 
     pub fn register_tab(&mut self, tab: CreativeTabDescriptor) {
@@ -92,6 +98,7 @@ impl LoadContext {
         ContentDeclarations {
             items: self.items,
             blocks: self.blocks,
+            recipes: self.recipes,
             tabs: self.tabs,
             resources: self.resources,
         }
@@ -102,6 +109,7 @@ impl LoadContext {
 pub struct ContentDeclarations {
     pub items: Vec<ItemDescriptor>,
     pub blocks: Vec<BlockDescriptor>,
+    pub recipes: Vec<RecipeDescriptor>,
     pub tabs: Vec<CreativeTabDescriptor>,
     pub resources: Vec<(String, Vec<u8>)>,
 }
