@@ -201,3 +201,64 @@ fn invalid_registration_never_publishes_partial_content_or_runs_setup() {
         assert!(runtime.shutdown().actions.is_empty());
     }
 }
+
+#[test]
+fn early_freeze_preserves_registered_instances_and_does_not_run_setup() {
+    let (a, b) = pair();
+    let mut runtime = Runtime::new(vec![Box::new(b), Box::new(a)]).unwrap();
+    runtime.freeze().unwrap();
+    assert_eq!(runtime.state(), State::Frozen);
+    let snapshot = runtime.content().clone();
+    assert_eq!(snapshot.items.len(), 2);
+    assert!(runtime.freeze().is_err());
+    // Example drains declarations in register: registering twice would lose them.
+    assert_eq!(runtime.initialize().unwrap().len(), 2);
+    assert_eq!(runtime.content(), &snapshot);
+}
+
+#[test]
+fn resource_paths_and_common_side_fail_before_snapshot_publication() {
+    struct Files(&'static ModMetadata, Vec<&'static str>);
+    impl NativeMod for Files {
+        fn metadata(&self) -> &'static ModMetadata {
+            self.0
+        }
+        fn register(&mut self, c: &mut LoadContext) -> Result<(), String> {
+            for path in &self.1 {
+                c.register_resource(*path, b"original".to_vec());
+            }
+            Ok(())
+        }
+    }
+    static CLIENT: ModMetadata = ModMetadata {
+        side: ModSide::Client,
+        ..ALPHA
+    };
+    for (meta, paths) in [
+        (
+            &ALPHA,
+            vec![
+                "assets/alpha/lang/en_us.json",
+                "assets/alpha/lang/en_us.json",
+            ],
+        ),
+        (&ALPHA, vec!["assets/beta/lang/en_us.json"]),
+        (&ALPHA, vec!["assets/alpha/../bad"]),
+        (&ALPHA, vec!["data/alpha/horizon/item/hidden.json"]),
+        (&CLIENT, vec!["assets/alpha/lang/en_us.json"]),
+    ] {
+        let mut runtime = Runtime::new(vec![Box::new(Files(meta, paths))]).unwrap();
+        assert!(runtime.freeze().is_err());
+        assert!(runtime.content().resources.is_empty());
+    }
+    let mut runtime = Runtime::new(vec![Box::new(Files(
+        &ALPHA,
+        vec!["assets/alpha/lang/en_us.json"],
+    ))])
+    .unwrap();
+    runtime.freeze().unwrap();
+    assert_eq!(
+        runtime.content().resources["assets/alpha/lang/en_us.json"],
+        b"original"
+    );
+}

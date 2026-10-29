@@ -71,6 +71,8 @@ pub struct CreativeTabDescriptor {
 pub struct ContentSnapshot {
     pub items: BTreeMap<ResourceId, ItemDescriptor>,
     pub tabs: BTreeMap<ResourceId, CreativeTabDescriptor>,
+    /// Original embedded resource files, ordered by their canonical path.
+    pub resources: BTreeMap<String, Vec<u8>>,
 }
 
 #[cfg(test)]

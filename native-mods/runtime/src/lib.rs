@@ -224,37 +224,23 @@ impl Runtime {
         &self.content
     }
 
-    /// Register all, freeze, then setup in dependency order. A failure cannot be retried.
-    /// Failed-batch actions are discarded; shutdown still visits every started mod.
-    pub fn initialize(&mut self) -> Result<Vec<ModAction>, LoaderError> {
+    /// Register and freeze before the host loads resources. Retains each mod
+    /// instance and its registration-owned state for later setup.
+    pub fn freeze(&mut self) -> Result<(), LoaderError> {
         if self.state != State::Resolved {
             return Err(LoaderError::InvalidState(self.state));
         }
-        self.state = State::Registering;
-        let mut content = ContentSnapshot::default();
-        for i in 0..self.mods.len() {
-            self.started = i + 1;
-            let mut context = LoadContext::default();
-            if let Err(reason) = self.mods[i].module.register(&mut context) {
-                return Err(self.fail(i, "register", reason));
-            }
-            if context.has_tick_subscription() {
-                self.tick_subscribers.push(i);
-            }
-            if let Err(reason) = content::collect(&mut content, self.mods[i].metadata.id, context) {
-                return Err(self.fail(i, "register", reason));
-            }
+        self.register_content()
+    }
+
+    /// Register all, freeze, then setup in dependency order. A failure cannot be retried.
+    /// Failed-batch actions are discarded; shutdown still visits every started mod.
+    pub fn initialize(&mut self) -> Result<Vec<ModAction>, LoaderError> {
+        if self.state == State::Resolved {
+            self.register_content()?;
+        } else if self.state != State::Frozen {
+            return Err(LoaderError::InvalidState(self.state));
         }
-        if let Err((owner, reason)) = content::validate(&content, self.metadata()) {
-            let i = self
-                .mods
-                .iter()
-                .position(|entry| entry.metadata.id == owner)
-                .expect("registered owner");
-            return Err(self.fail(i, "freeze", reason));
-        }
-        self.content = Arc::new(content);
-        self.state = State::Frozen;
         let mut actions = Vec::new();
         for i in 0..self.mods.len() {
             self.call(i, "initialize", |m, c| m.initialize(c), &mut actions)?;
@@ -268,6 +254,35 @@ impl Runtime {
         }
         self.state = State::Running;
         Ok(actions)
+    }
+
+    fn register_content(&mut self) -> Result<(), LoaderError> {
+        self.state = State::Registering;
+        let mut content = ContentSnapshot::default();
+        for i in 0..self.mods.len() {
+            self.started = i + 1;
+            let mut context = LoadContext::default();
+            if let Err(reason) = self.mods[i].module.register(&mut context) {
+                return Err(self.fail(i, "register", reason));
+            }
+            if context.has_tick_subscription() {
+                self.tick_subscribers.push(i);
+            }
+            if let Err(reason) = content::collect(&mut content, self.mods[i].metadata, context) {
+                return Err(self.fail(i, "register", reason));
+            }
+        }
+        if let Err((owner, reason)) = content::validate(&content, self.metadata()) {
+            let i = self
+                .mods
+                .iter()
+                .position(|entry| entry.metadata.id == owner)
+                .expect("registered owner");
+            return Err(self.fail(i, "freeze", reason));
+        }
+        self.content = Arc::new(content);
+        self.state = State::Frozen;
+        Ok(())
     }
 
     fn fail(&mut self, i: usize, hook: &'static str, reason: String) -> LoaderError {

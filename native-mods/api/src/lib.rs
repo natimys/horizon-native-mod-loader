@@ -48,6 +48,7 @@ pub struct LoadContext {
     tick: bool,
     items: Vec<ItemDescriptor>,
     tabs: Vec<CreativeTabDescriptor>,
+    resources: Vec<(String, Vec<u8>)>,
 }
 
 impl LoadContext {
@@ -67,10 +68,27 @@ impl LoadContext {
         self.tabs.push(tab);
     }
 
-    /// Runtime consumes declarations; nothing is published until global freeze succeeds.
-    pub fn into_descriptors(self) -> (Vec<ItemDescriptor>, Vec<CreativeTabDescriptor>) {
-        (self.items, self.tabs)
+    /// Embed original assets/data in the linked binary. Paths use the existing
+    /// assets/<mod-id>/... or data/<mod-id>/... resource layout.
+    pub fn register_resource(&mut self, path: impl Into<String>, bytes: impl Into<Vec<u8>>) {
+        self.resources.push((path.into(), bytes.into()));
     }
+
+    /// Runtime consumes declarations; nothing is published until global freeze succeeds.
+    pub fn into_descriptors(self) -> ContentDeclarations {
+        ContentDeclarations {
+            items: self.items,
+            tabs: self.tabs,
+            resources: self.resources,
+        }
+    }
+}
+
+/// Unpublished registration batch, consumed only by the runtime.
+pub struct ContentDeclarations {
+    pub items: Vec<ItemDescriptor>,
+    pub tabs: Vec<CreativeTabDescriptor>,
+    pub resources: Vec<(String, Vec<u8>)>,
 }
 
 /// Owned action queue; the host validates and executes actions after each dispatch.
