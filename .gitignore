@@ -1,5 +1,4 @@
-# Independently versioned engine and private local resources.
-/horizon/
+# Private local resources (the engine is a pinned Git submodule).
 /game-resources/
 /.aws/
 /.agents/

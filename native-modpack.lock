@@ -1,7 +1,7 @@
 {
   "api": 1,
   "cargo": "cargo 1.99.1 (5f94df478 2026-08-27)",
-  "horizon": "f84396c94ebc52f9abb072522b8779a8834362b7",
+  "horizon": "f3cc870303b2510634cdd59ca99a71f5bb7a9fa6",
   "host": "x86_64-unknown-linux-gnu",
   "rustc": "rustc 1.99.1 (58cf8f9c3 2026-10-13)",
   "schema": 1,
@@ -45,6 +45,6 @@
     "native-mods/ui/tests/catalog.rs": "152ee08c464ac1f1ced65d3c09efd8843c07f9b5873ecf4861e32292d81a4fb9",
     "tools/check_native_boundaries.py": "78afb8759840f1dd03299ff3fa8917fcec03774499dd1d65daa7f16445372871",
     "tools/native_modpack.py": "f4eb2ed5caee584df706763173c170d40ecbd4e7106be7b2a4b31c522f9c4d6d",
-    "tools/native_pack_release.py": "cc8ab5f9c254483c7e903fe28e95c932ca8d13eb32dfe080f7320b7b4cb58bf3"
+    "tools/native_pack_release.py": "87ca8cf8f826fcb73c6fdb324e8690883d3018ad2f04bab85bdc7c0ee29e9b66"
   }
 }

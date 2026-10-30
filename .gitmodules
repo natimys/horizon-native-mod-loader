@@ -1,0 +1,3 @@
+[submodule "horizon"]
+	path = horizon
+	url = https://github.com/natimys/horizon-native-engine.git

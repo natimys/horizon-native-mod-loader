@@ -4,7 +4,8 @@ Developer prerequisites: Python 3.11+ (stdlib tomllib), Git and the exact Rust/C
 version in native-modpack.toml. Follow Horizon's own host build prerequisites.
 Python tools are development tools; the game and native mods remain Rust.
 
-Run from the outer workspace, with the independent engine checkout at `horizon/`.
+Run from the outer workspace, with the pinned engine submodule at `horizon/`
+(`git submodule update --init --recursive` after cloning).
 Use the reviewed engine commit from native-modpack.lock. Do not point tools at
 player homes. No tool prepares, copies or downloads Minecraft resources.
 
@@ -136,9 +137,10 @@ regression suite; preserve the documented parallel-GPU baseline SIGSEGV.
 
 .github/workflows/native.yml has native tooling/API checks plus vanilla, native
 Workshop and combined WASM/native Horizon jobs. It uses no Mojang data. The engine
-is checked out at the exact source-lock revision from repository variable
-NATIVE_HORIZON_REPOSITORY (default horizon-rust/horizon). Integration commits must
-be accessible there; CI refuses a missing revision instead of using upstream main.
+is checked out recursively from `.gitmodules` at the gitlink revision.
+`tools/check_engine_pin.py` requires the gitlink, checkout, source lock and exact
+toolchain file to agree. The fork commit must be published before the outer
+repository; CI refuses an unavailable revision instead of using upstream main.
 No push is performed by these tools. Workflow execution needs a hosted checkout;
 local validation does not imply a hosted green run. Asset-dependent game scenarios
 remain separately recorded manual/scratch acceptance.

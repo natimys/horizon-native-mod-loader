@@ -8,8 +8,14 @@ permissions:
 jobs:
   native:
     runs-on: ubuntu-24.04
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Audit public source history
+        run: python3 tools/audit_publication.py
       - name: Install exact recipe toolchain
         run: |
           rust=$(python3 -c 'import tomllib; print(tomllib.load(open("native-modpack.toml", "rb"))["rust"])')
@@ -26,22 +32,20 @@ jobs:
       - run: cargo clippy --manifest-path native-mods/Cargo.toml --workspace --all-targets --all-features --locked --offline -- -D warnings
   horizon:
     runs-on: ubuntu-24.04
+    timeout-minutes: 90
     strategy:
       fail-fast: false
       matrix:
         variant: [vanilla, native, wasm-native]
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-      - name: Read engine pin
-        id: pin
-        run: echo "sha=$(python3 -c 'import json; print(json.load(open("native-modpack.lock"))["horizon"])')" >> "$GITHUB_OUTPUT"
-      # The integration revision must be available in this repository/fork.
-      # No branch fallback: testing upstream main would silently omit the bridge.
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
-          repository: ${{ vars.NATIVE_HORIZON_REPOSITORY || 'horizon-rust/horizon' }}
-          ref: ${{ steps.pin.outputs.sha }}
-          path: horizon
+          fetch-depth: 0
+          persist-credentials: false
+          submodules: recursive
+      # No upstream/branch fallback: missing public fork commits fail checkout.
+      - name: Verify engine source selection
+        run: python3 tools/check_engine_pin.py
       - name: Install exact toolchain and host dependencies
         run: |
           rust=$(python3 -c 'import tomllib; print(tomllib.load(open("native-modpack.toml", "rb"))["rust"])')

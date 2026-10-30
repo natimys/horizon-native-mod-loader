@@ -83,7 +83,9 @@ def package_files(root):
     names = tracked(root, "native-mods", "docs/native-modding", "tools/native*.py",
                     "tests/test_native*.py", "tools/check_native_boundaries.py", ".github/workflows/native.yml",
                     "native-modpack.toml", LOCK, "LICENSE", "THIRD_PARTY_NOTICES.md",
-                    "README.md", "CONTRIBUTING.md", "SECURITY.md", "CODE_OF_CONDUCT.md")
+                    "README.md", "CONTRIBUTING.md", "SECURITY.md", "CODE_OF_CONDUCT.md",
+                    "rust-toolchain.toml", "tools/audit_publication.py", "tools/check_engine_pin.py",
+                    "tests/test_publication.py")
     # Explicit source-only export. Never recurse into resource homes or engine checkout.
     forbidden = {"game-resources", ".local", "target", "saves", ".aws", ".env", "__pycache__"}
     for name in names:
