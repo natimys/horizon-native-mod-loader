@@ -12,13 +12,15 @@ import re
 import subprocess
 
 ROOT = Path(__file__).resolve().parents[1]
-PRIVATE = {"game-resources", ".aws", ".agents", ".codex", ".local", "target",
+PRIVATE = {"game-resources", ".aws", ".ssh", ".kube", ".agents", ".codex", ".local", "target",
            "saves", "backups", "__pycache__", ".venv", "node_modules"}
 EXTENSIONS = {".jar", ".class", ".mca", ".mcr", ".hprof", ".jfr", ".exe", ".dll", ".so", ".zip"}
 PATTERNS = {
     "github-token": re.compile(rb"\b(?:gh[pousr]_[A-Za-z0-9]{36,255}|github_pat_[A-Za-z0-9_]{60,255})\b"),
     "aws-key-id": re.compile(rb"\b(?:AKIA|ASIA)[A-Z0-9]{16}\b"),
     "private-key": re.compile(rb"-----BEGIN (?:RSA |EC |OPENSSH |DSA )?PRIVATE KEY-----"),
+    "service-token": re.compile(rb"\b(?:sk-(?:proj-|svcacct-)?[A-Za-z0-9_-]{32,}|xox[baprs]-[A-Za-z0-9-]{20,}|AIza[A-Za-z0-9_-]{35})\b"),
+    "secret-assignment": re.compile(rb'''(?i)\b(?:password|passwd|api[_-]?key|access[_-]?token|client[_-]?secret|secret[_-]?key)\b["']?\s*[:=]\s*["'][A-Za-z0-9_+/=-]{24,}["']'''),
     "credential-url": re.compile(rb"https?://[^\s/:@]+:[^\s/@]+@"),
     "personal-path": re.compile(rb"(?<![A-Za-z0-9])/(?:home|Users)/[A-Za-z0-9_.-]+/"),
 }
@@ -32,7 +34,7 @@ def prohibited(name):
     path = PurePosixPath(name)
     return (bool(PRIVATE.intersection(path.parts)) or path.suffix.lower() in EXTENSIONS
             or any(p == ".env" or p.startswith(".env.") for p in path.parts)
-            or path.name in {"README-SETUP.md", "horizon_official_server.txt", "credentials", "id_rsa", "id_ed25519"})
+            or path.name in {"README-SETUP.md", "horizon_official_server.txt", "credentials", "id_rsa", "id_ed25519", ".netrc", ".npmrc", ".pypirc"})
 
 
 def scan(root, all_refs=False, engine=False):

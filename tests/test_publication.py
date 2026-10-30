@@ -41,6 +41,13 @@ class PublicationAuditTests(unittest.TestCase):
         for name in [".env", "nested/.env.local", ".codex/config.toml", "build/example.jar", "saves/level.dat"]:
             self.assertTrue(audit.prohibited(name), name)
 
+    def test_service_tokens_and_literal_secret_assignments(self):
+        for prefix in [b"sk-proj-", b"xoxb-"]:
+            self.assertIsNotNone(audit.PATTERNS["service-token"].search(prefix + b"a" * 40))
+        self.assertIsNotNone(audit.PATTERNS["service-token"].search(b"AIza" + b"a" * 35))
+        self.assertIsNotNone(audit.PATTERNS["secret-assignment"].search(b'api_key = "' + b"a" * 32 + b'"'))
+        self.assertIsNone(audit.PATTERNS["secret-assignment"].search(b'api_key = read_from_environment()'))
+
 
 if __name__ == "__main__":
     unittest.main()
