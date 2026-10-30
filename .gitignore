@@ -9,3 +9,6 @@ target/
 .horizon-cache/
 *.log
 *.tmp
+
+# Developer Python bytecode.
+__pycache__/
