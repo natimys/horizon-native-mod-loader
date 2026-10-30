@@ -20,7 +20,7 @@ PATTERNS = {
     "aws-key-id": re.compile(rb"\b(?:AKIA|ASIA)[A-Z0-9]{16}\b"),
     "private-key": re.compile(rb"-----BEGIN (?:RSA |EC |OPENSSH |DSA )?PRIVATE KEY-----"),
     "credential-url": re.compile(rb"https?://[^\s/:@]+:[^\s/@]+@"),
-    "personal-path": re.compile(rb"/(?:home|Users)/[A-Za-z0-9_.-]+/"),
+    "personal-path": re.compile(rb"(?<![A-Za-z0-9])/(?:home|Users)/[A-Za-z0-9_.-]+/"),
 }
 
 

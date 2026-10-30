@@ -34,6 +34,8 @@ class PublicationAuditTests(unittest.TestCase):
             self.assertNotIn("ghp_" + "a" * 36, str(report))
 
     def test_public_sources_and_original_image_are_allowed(self):
+        self.assertIsNone(audit.PATTERNS["personal-path"].search(b"temporary working/home/XDG/launcher paths"))
+        self.assertIsNotNone(audit.PATTERNS["personal-path"].search(b'"/' + b'home/person/project/"'))
         self.assertFalse(audit.prohibited("native-mods/mods/hello/assets/token.png"))
         self.assertFalse(audit.prohibited("docs/native-modding/TOOLCHAIN.md"))
         for name in [".env", "nested/.env.local", ".codex/config.toml", "build/example.jar", "saves/level.dat"]:
