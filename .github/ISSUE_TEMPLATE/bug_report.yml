@@ -1,0 +1,30 @@
+name: Bug report
+description: Report a native loader or engine integration problem
+body:
+  - type: markdown
+    attributes:
+      value: "Include text-only, redacted evidence. Do not upload Minecraft files, personal worlds, tokens or local configuration."
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Expected and actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Minimal reproduction
+      description: Use original synthetic source/fixtures and include commands.
+    validations:
+      required: true
+  - type: textarea
+    id: revision
+    attributes:
+      label: Revisions and environment
+      description: Outer commit, engine submodule commit, rustc/Cargo versions, OS and pack features.
+    validations:
+      required: true
+  - type: textarea
+    id: checks
+    attributes:
+      label: Actual checks and redacted logs

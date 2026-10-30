@@ -1,0 +1,16 @@
+name: Feature request
+description: Propose a focused API or tooling capability
+body:
+  - type: textarea
+    id: usecase
+    attributes:
+      label: Use case and expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: boundary
+    attributes:
+      label: Public contract and alternatives
+      description: Describe a general capability useful to independent mods, compatibility and validation.
+    validations:
+      required: true
