@@ -21,10 +21,11 @@ class ReleaseTests(unittest.TestCase):
         subprocess.run(["git", "init", "-q", str(self.root)], check=True)
         self.write("native-mods/api/src/lib.rs", "original")
         self.write("native-modpack.lock", "{}")
+        self.write("tools/check_native_boundaries.py", "# architectural guard")
         self.write("native-modpack.toml", "schema = 1")
         self.write("game-resources/private.txt", "PRIVATE")
         self.write("native-mods/target/secret", "BUILD OUTPUT")
-        subprocess.run(["git", "add", "native-mods/api", "native-modpack.lock", "native-modpack.toml"], cwd=self.root, check=True)
+        subprocess.run(["git", "add", "native-mods/api", "native-modpack.lock", "native-modpack.toml", "tools/check_native_boundaries.py"], cwd=self.root, check=True)
         subprocess.run(["git", "-c", "user.name=Test", "-c", "user.email=test@example.invalid", "commit", "-qm", "fixture"], cwd=self.root, check=True)
 
     def write(self, name, text):
@@ -40,6 +41,7 @@ class ReleaseTests(unittest.TestCase):
             with self.assertRaises(FileExistsError):
                 release.package(a, self.root)
         with zipfile.ZipFile(a) as archive:
+            self.assertIn("tools/check_native_boundaries.py", archive.namelist())
             self.assertFalse(any("private" in n or "target" in n for n in archive.namelist()))
             for line in archive.read("SHA256SUMS").decode().splitlines():
                 expected, name = line.split("  ", 1)

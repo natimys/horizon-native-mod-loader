@@ -79,7 +79,7 @@ def verify(root=ROOT):
 
 def package_files(root):
     names = tracked(root, "native-mods", "docs/native-modding", "tools/native*.py",
-                    "tests/test_native*.py", ".github/workflows/native.yml",
+                    "tests/test_native*.py", "tools/check_native_boundaries.py", ".github/workflows/native.yml",
                     "native-modpack.toml", LOCK)
     # Explicit source-only export. Never recurse into resource homes or engine checkout.
     forbidden = {"game-resources", ".local", "target", "saves", ".aws", ".env", "__pycache__"}
