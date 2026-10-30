@@ -26,6 +26,7 @@ def main():
         subprocess.run(["git", "init", "-q", str(root)], check=True)
         subprocess.run(["git", "add", "native-mods", "docs", "tools", "tests", ".github",
                         "native-modpack.toml", "native-modpack.lock"], cwd=root, check=True)
+        subprocess.run(["git", "add", "LICENSE", "THIRD_PARTY_NOTICES.md"], cwd=root, check=True)
         subprocess.run(["git", "-c", "user.name=Recipe test", "-c", "user.email=test@example.invalid",
                         "commit", "-qm", "reviewed source recipe"], cwd=root, check=True)
         subprocess.run(["git", "clone", "--shared", "--no-checkout", str(ROOT / "horizon"), str(root / "horizon")], check=True)
