@@ -55,12 +55,18 @@ class ReleaseTests(unittest.TestCase):
                 release.package(self.root / "a.zip", self.root)
 
     def test_lock_drift_and_no_implicit_relock(self):
-        expected = {"sha256": {"a": "old"}, "horizon": "one"}
+        expected = {"schema": 1, "sha256": {"a": "old"}, "horizon": "one"}
         self.write("native-modpack.lock", json.dumps(expected))
         with patch.object(release, "snapshot", return_value={"sha256": {"a": "new"}, "horizon": "two"}):
             with self.assertRaisesRegex(PackError, "stale source lock"):
                 release.verify(self.root)
         self.assertEqual(json.loads((self.root / "native-modpack.lock").read_text()), expected)
+
+    def test_malformed_lock_fails_with_actionable_error(self):
+        for value in [[], {"schema": 99, "sha256": {}}, {"schema": 1, "sha256": []}]:
+            self.write("native-modpack.lock", json.dumps(value))
+            with self.assertRaisesRegex(PackError, "malformed source lock"):
+                release.verify(self.root)
 
     def test_symlinks_and_prohibited_tracked_files(self):
         (self.root / "link").symlink_to(self.root / "game-resources", target_is_directory=True)

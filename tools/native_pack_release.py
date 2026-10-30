@@ -68,6 +68,8 @@ def encode(value):
 
 def verify(root=ROOT):
     expected = json.loads((root / LOCK).read_text())
+    if not isinstance(expected, dict) or expected.get("schema") != 1 or not isinstance(expected.get("sha256"), dict):
+        raise PackError("unsupported or malformed source lock; expected schema 1 with sha256 table")
     actual = snapshot(root)
     if expected != actual:
         changes = [key for key in actual if expected.get(key) != actual[key]]
