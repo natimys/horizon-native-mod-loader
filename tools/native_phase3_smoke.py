@@ -11,6 +11,7 @@ import os
 from pathlib import Path
 import socket
 import subprocess
+import sys
 import tempfile
 import time
 
@@ -188,6 +189,8 @@ def local(args):
             reload_and_catalog(session,pos)
         if args.mode == "integrated":
             port = session.call("lan", "open", 0, "commands")["port"]
+            subprocess.run([sys.executable, str(Path(__file__).with_name("native_static_pack_probe.py")),
+                            "--port", str(port)], check=True)
             guest = Session(args, "lan-guest")
             guest.client(["--server", f"127.0.0.1:{port}", "--name", "Phase3Guest"])
             initial = counter(guest, pos)["block_entity"]["fields"]["visits"]
