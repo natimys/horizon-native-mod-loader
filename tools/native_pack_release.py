@@ -120,6 +120,9 @@ def build(variant, features, release, root=ROOT):
     chosen = set(filter(None, features.split(",")))
     if chosen - known or (variant == "vanilla" and chosen):
         raise PackError("unknown feature or pack features selected for vanilla build")
+    from check_native_boundaries import audit, metadata, feature_off
+    audit(metadata(root), root)
+    feature_off(root)
     command = ["cargo", "build", "--manifest-path", str(root / "horizon/Cargo.toml"),
                "-p", "horizon-client", "--bin", "horizon-client", "--bin", "horizon-ctl",
                "--no-default-features", "--locked", "--offline", "--target-dir", str(root / "horizon/target")]

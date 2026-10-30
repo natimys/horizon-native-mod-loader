@@ -1,0 +1,82 @@
+name: Native source API and Horizon regression
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  native:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Install exact recipe toolchain
+        run: |
+          rust=$(python3 -c 'import tomllib; print(tomllib.load(open("native-modpack.toml", "rb"))["rust"])')
+          rustup toolchain install "$rust" --profile minimal --component rustfmt,clippy
+          rustup default "$rust"
+      - run: cargo fetch --manifest-path native-mods/Cargo.toml --locked
+      - run: python3 tools/native_modpack.py check
+      - run: python3 -m unittest discover -s tests -v
+      - run: python3 tools/check_native_boundaries.py
+      - run: python3 tools/native_generated_smoke.py
+      - run: cargo fmt --manifest-path native-mods/Cargo.toml --all -- --check
+      - run: cargo test --manifest-path native-mods/Cargo.toml --workspace --all-features --locked --offline
+      - run: cargo clippy --manifest-path native-mods/Cargo.toml --workspace --all-targets --all-features --locked --offline -- -D warnings
+  horizon:
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        variant: [vanilla, native, wasm-native]
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Read engine pin
+        id: pin
+        run: echo "sha=$(python3 -c 'import json; print(json.load(open("native-modpack.lock"))["horizon"])')" >> "$GITHUB_OUTPUT"
+      # The integration revision must be available in this repository/fork.
+      # No branch fallback: testing upstream main would silently omit the bridge.
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          repository: ${{ vars.NATIVE_HORIZON_REPOSITORY || 'horizon-rust/horizon' }}
+          ref: ${{ steps.pin.outputs.sha }}
+          path: horizon
+      - name: Install exact toolchain and host dependencies
+        run: |
+          rust=$(python3 -c 'import tomllib; print(tomllib.load(open("native-modpack.toml", "rb"))["rust"])')
+          rustup toolchain install "$rust" --profile minimal --component rustfmt,clippy --target wasm32-unknown-unknown
+          rustup default "$rust"
+          sudo apt-get update
+          sudo apt-get install -y libasound2-dev libudev-dev libvulkan1 mesa-vulkan-drivers
+      - name: Isolate test homes
+        run: |
+          scratch=$(mktemp -d)
+          for key in HORIZON_HOME HORIZON_LAUNCHER_HOME XDG_DATA_HOME XDG_CONFIG_HOME HORIZON_LAUNCHER_TRASH HORIZON_LAUNCHER_CLIPBOARD HORIZON_LAUNCHER_DESKTOP; do
+            mkdir -p "$scratch/$key"
+            echo "$key=$scratch/$key" >> "$GITHUB_ENV"
+          done
+          echo "HORIZON_LAUNCHER_NO_SELF_UPDATE=1" >> "$GITHUB_ENV"
+          echo "HORIZON_NO_AUDIO=1" >> "$GITHUB_ENV"
+          echo "HORIZON_NO_DISCORD=1" >> "$GITHUB_ENV"
+          echo "HORIZON_NO_TELEMETRY=1" >> "$GITHUB_ENV"
+      - run: cargo fetch --manifest-path horizon/Cargo.toml --locked
+      - run: python3 tools/native_pack_release.py verify
+      - run: python3 tools/check_native_boundaries.py --feature-off
+      - name: Build and test selected variant
+        env:
+          VARIANT: ${{ matrix.variant }}
+        run: |
+          case "$VARIANT" in
+            vanilla) features=();;
+            native) features=(--features native-mods,horizon-native-pack/gameplay-example);;
+            wasm-native) features=(--features native-mods,mods,horizon-native-pack/gameplay-example);;
+          esac
+          cargo check --manifest-path horizon/Cargo.toml -p horizon-client --bin horizon-client --no-default-features "${features[@]}" --locked --offline
+          cargo test --manifest-path horizon/Cargo.toml -p horizon-client --lib --bins --no-default-features "${features[@]}" --locked --offline
+          cargo test --manifest-path horizon/Cargo.toml -p horizon-client-render --lib --no-default-features --locked --offline -- --test-threads=1
+      - name: Preserve original WASM loader regression
+        if: matrix.variant == 'wasm-native'
+        run: cargo test --manifest-path horizon/Cargo.toml -p horizon-mods --locked --offline
+      - name: Guard public source tree
+        working-directory: horizon
+        run: python3 tools/check_public_tree.py
