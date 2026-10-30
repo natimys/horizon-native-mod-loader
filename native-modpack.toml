@@ -1,0 +1,21 @@
+# Developer build recipe. Native mods are trusted code; adding/removing needs rebuild.
+schema = 1
+api = 1
+rust = "1.99.1"
+
+[[mods]]
+package = "horizon-native-hello-mod"
+path = "native-mods/mods/hello"
+version = "0.1.0"
+
+[[mods]]
+package = "horizon-native-companion-mod"
+path = "native-mods/mods/companion"
+version = "0.1.0"
+feature = "test-pack"
+
+[[mods]]
+package = "horizon-native-workshop-mod"
+path = "native-mods/mods/workshop"
+version = "0.1.0"
+feature = "gameplay-example"
