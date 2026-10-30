@@ -20,6 +20,7 @@ jobs:
       - run: python3 -m unittest discover -s tests -v
       - run: python3 tools/check_native_boundaries.py
       - run: python3 tools/native_generated_smoke.py
+      - run: python3 tools/native_author_template_smoke.py
       - run: cargo fmt --manifest-path native-mods/Cargo.toml --all -- --check
       - run: cargo test --manifest-path native-mods/Cargo.toml --workspace --all-features --locked --offline
       - run: cargo clippy --manifest-path native-mods/Cargo.toml --workspace --all-targets --all-features --locked --offline -- -D warnings

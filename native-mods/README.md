@@ -1,4 +1,4 @@
-# Compile-time native loader — experimental phase 3 gameplay
+# Compile-time native loader — experimental source API
 
 Trusted Rust crates are statically linked into a custom Horizon executable.
 Adding or removing a mod requires rebuilding. There is no binary plugin ABI,
@@ -207,3 +207,15 @@ scratch paths. Do not commit those caches, screenshots, resources or saves.
 See `docs/native-modding/PHASE3_VALIDATION.md` for actual outcomes and limitations.
 Mutable native settings, Creative expansion, dynamic models and Create remain out
 of scope. Source API is experimental; native crates are fully trusted process code.
+
+
+## Phase 4 authoring/toolchain
+
+`../native-modpack.toml` is the source recipe for the generated pack. Run
+`python3 tools/native_modpack.py generate` from the outer workspace and
+`python3 tools/native_pack_release.py verify` before locked builds. Exact usage,
+source-only packaging, author templates and CI setup are in
+[TOOLCHAIN.md](../docs/native-modding/TOOLCHAIN.md); API upgrades and trust are in
+[API_POLICY.md](../docs/native-modding/API_POLICY.md); measured diagnostic budgets
+are in [PERFORMANCE.md](../docs/native-modding/PERFORMANCE.md). No new engine or
+gameplay API is introduced by this tooling. Create remains deferred.
