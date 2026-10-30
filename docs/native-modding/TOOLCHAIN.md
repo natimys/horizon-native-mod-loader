@@ -14,8 +14,8 @@ player homes. No tool prepares, copies or downloads Minecraft resources.
 optional `[[mods]]` array (absence/empty array produces a zero-mod pack).
 Each entry requires `package`, workspace-relative `path`, exact `version`.
 Optional `feature` makes that crate opt-in through a pack feature; optional
-`features = ["name"]` selects Cargo features in the mod. Default mod features are
-always disabled. Omit `feature` for always-linked mods. Paths must be ordinary
+`features = ["name"]` selects Cargo features in the mod. Implicit default mod features are
+disabled; the feature list remains explicit. Omit `feature` for always-linked mods. Paths must be ordinary
 reviewed source directories below native-mods/mods; symlinks/traversal, floating
 versions, duplicate packages/paths and unknown keys fail. Remote/git source
 fetching and registry-installed mods are deliberately unsupported: vendor trusted
@@ -111,6 +111,7 @@ independently without editing the real pack:
 ```sh
 python3 tools/native_author_template_smoke.py
 python3 tools/native_generated_smoke.py
+python3 tools/native_package_smoke.py # after committing reviewed release sources
 python3 -m unittest discover -s tests -v
 cargo test --manifest-path native-mods/Cargo.toml --workspace --all-features --locked --offline
 cargo clippy --manifest-path native-mods/Cargo.toml --workspace --all-targets --all-features --locked --offline -- -D warnings

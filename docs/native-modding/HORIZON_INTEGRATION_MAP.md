@@ -500,3 +500,19 @@ Phase 4 needs only developer tooling around these boundaries. See PHASE4_PLAN.md
 | File / entry point | Reason | Alternative considered | Test |
 |---|---|---|---|
 | No engine insertion proposed | Existing path dependency and pack constructors accept generated composition | New engine settings/branches have no concrete need | Rebuild and test off/on using generated pack; graph and lifecycle checks |
+
+## Phase 4 delivered gate
+
+Gate CLOSED / PASS; PHASE4_VALIDATION.md records the source-recipe and generated
+composition tests, locked off/on/combined-WASM builds/regressions, real integrated/
+LAN/in-frame save/restart/mismatch/reload, source ZIP roundtrip and serial renderer
+526/15 result. Engine remains f84396c94 with no phase 4 edits or commits.
+Public API epoch/runtime/adapter/storage/protocol implementation is unchanged;
+only external native-pack composition is generated. No concrete mod entered
+engine code, no new Game field, no new lifecycle/gameplay hook.
+
+The candidate insertion ledger therefore remains empty: existing pack constructors
+and optional relative dependencies suffice. Source tooling, docs, original author
+template and CI live in the outer repository. Hosted CI execution is NOT RUN and
+requires availability of the exact engine pin; no push. The parallel GPU baseline
+diagnosis is preserved, with no attempted fix. No Create work.

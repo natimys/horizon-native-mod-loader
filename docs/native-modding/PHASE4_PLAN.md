@@ -37,3 +37,12 @@ Audit/plan; manifest/generation with tests; lock/build/package tooling with test
 graph guard/CI with tests; author/version/performance documentation and templates;
 final validation and acceptance. Independently completed corrections get their own
 commits. Existing untracked user files are excluded. No push.
+
+## Completion
+
+All six commit units above are delivered (with independent corrective commits).
+See PHASE4_VALIDATION.md for actual off/on/combined-WASM results, serial renderer,
+real generated-pack save/LAN/in-frame acceptance and portable recipe roundtrip.
+No engine insertion was needed. Hosted Actions execution remains separately
+unverified until the pinned integration revision is accessible to that checkout.
+No Create work.

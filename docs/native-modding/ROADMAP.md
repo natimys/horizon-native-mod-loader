@@ -11,7 +11,11 @@ Each phase ends with working code + tests + a brief audit of changed engine line
   shapeless recipes, versioned integer-field block entities and namespaced
   commands. Actual integrated/in-frame/LAN/dedicated scenarios and save/restart
   passed; see PHASE3_VALIDATION.md for results and inherited GPU-test failure.
-- Phases 4–5: not started. No Create port work.
+- Phase 4: **gate CLOSED / PASS** for manifest/generation, pinned source/locked
+  builds, source packaging, API/author/performance policy and CI/boundary checks.
+  Off/on/combined-WASM regressions and actual generated-pack save/LAN/in-frame
+  scenarios pass. Hosted Actions execution is not claimed; see PHASE4_VALIDATION.md.
+- Phase 5: not started. No Create port work.
 
 ## Validation policy — decision of 2026-10-30
 
@@ -106,6 +110,27 @@ required or claimed by this gate. Phase 4 is the next smallest roadmap stage.
 - User-friendly `native-modpack.toml` and generator for `native-pack`; reproducible locked builds, dependency pinning, configuration/help, packaging without Mojang assets.
 - Document API versioning and upgrade policy, testing templates, examples, performance budget and trusted-code warnings.
 - Add CI for no-mod and modded variants; detect prohibited engine dependencies in mod crates.
+
+**2026-10-30 acceptance: PASS.** All three phase 4 bullets are delivered:
+
+- Schema-1 recipe generates the existing pack without engine edits. Exact local
+  crate versions, source/toolchain/engine hashes and both Cargo.lock files protect
+  locked offline builds. Zero/one/two/gameplay compositions and real source ZIP
+  roundtrip pass; packaging includes no Mojang assets or player data.
+- API epoch/source upgrade rules, tested API-only author template, examples,
+  runtime performance targets/measurements and trusted-code warnings are documented.
+- CI defines vanilla/native/combined-WASM checks and sequential renderer tests.
+  A resolved graph guard detects prohibited renamed/transitive/platform/build
+  dependencies. Local-equivalent off/on/combined suites, WASM sandbox, original
+  renderer serial suite and real generated-pack integrated/LAN/in-frame scenarios
+  pass. Hosted execution needs a repository exposing the exact engine pin and is
+  separately NOT RUN; no push or green hosted run is claimed.
+
+Reproducibility covers pinned source/dependency selection and deterministic source
+recipe bytes on the recorded toolchain/host, not universal bit-identical binaries.
+Full commands, failures resolved, commit range and limits: PHASE4_VALIDATION.md.
+Public Mod API and engine implementation are unchanged. Phase 5/Create have not
+started and require a separate next scope; closing phase 4 does not begin them.
 
 ## Phase 5 — Prepare for Create port (do NOT start Create yet)
 

@@ -210,3 +210,20 @@ custom renderer, block-entity inventory, runtime content remapping or migration
 system. Those additions need separate public API proposals and tests. Settings,
 Creative capacity and dynamic models were not prerequisites and were not added.
 Create remains deferred.
+
+## Phase 4 source composition/toolchain (implemented)
+
+A strict TOML source recipe generates the existing native-pack boundary; the
+engine continues to consume generic Runtime through the same feature/path.
+Exact source/package/toolchain/engine locks are build-time developer contracts,
+not runtime mutable mod settings or a binary plugin ABI. Native API/runtime/UI
+remain separate from the engine. A resolved dependency graph guard audits all
+mod/native layers; it is not a sandbox for native code.
+
+Portable ZIPs contain only reviewed tracked native source, original examples,
+author templates and developer tooling/docs. Engine/resources/dependency caches
+are obtained separately; no Mojang data or saves are exported. Source API upgrade,
+persistence/multiplayer obligations, locked builds and CI limits are specified in
+API_POLICY.md, TOOLCHAIN.md and PHASE4_VALIDATION.md. API epoch 1 and its source
+version 0.1.0 are unchanged. Phase 4 introduces no gameplay contract, engine
+insertion, schema migration or Create implementation.
