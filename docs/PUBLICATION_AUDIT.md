@@ -56,6 +56,12 @@ messages. These inherited public paths remain in upstream ancestry; preserving
 history means this publication cannot promise a path-free engine history.
 There were no matches for the audited GitHub token, AWS access-key ID or private
 key patterns. Raw match values and local filesystem inventories are not published.
+The follow-up full-ref scan at fork preparation commit `f3cc87030`, with additional
+service-token and literal-secret-assignment patterns, covered 9,465 commits and
+32,502 blobs. It reported 198 path matches after the prose-boundary fix, the same
+7 test-URL objects and the same unrelated-branch large image; no additional token
+or literal-secret matches. The subsequent two workflow fixture-path edits were
+checked separately and introduce no credential/path findings.
 
 ## Licenses and provenance
 
@@ -75,11 +81,14 @@ No rights to Minecraft assets or trademarks are asserted.
 
 ## Integration and CI preparation
 
-Engine preparation commit: `f3cc87030` on `codex/native-integration`. Changes are
-only README/fork documentation, a local-note ignore rule, and relocation of 14
+Engine preparation commits: `f3cc87030` and `d303c4d00` on
+`codex/native-integration`; the final submodule pin is
+`d303c4d009811d83071bbaf26411ff5fbd4cd454` (matches the gitlink/source lock).
+Changes are README/fork documentation, a local-note ignore rule, and relocation of 14
 upstream workflow files into `.github/upstream-workflows/`. Their bytes are
 unchanged. This prevents inherited release/deploy/private-runner jobs from
-executing in the downstream fork. No engine Rust code, public Mod API or gameplay
+executing in the downstream fork. Two Python test modules now read those preserved
+fixtures at their new location, retaining all assertions. No engine Rust code, public Mod API or gameplay
 hook was added or changed in this preparation step.
 
 The outer project tracks a valid mode-160000 gitlink plus HTTPS `.gitmodules`
@@ -93,7 +102,39 @@ hosted Actions cannot be verified before publication is authorized.
 
 ## Validation record
 
-Actual final commands, results and remaining publication gates are recorded below
-after the final local checks. Prior phase acceptance is historical evidence in
-`native-modding/PHASE4_VALIDATION.md`, not a substitute for these checks or a
-hosted run of the new repository.
+| Check | Actual result |
+| --- | --- |
+| Outer `python3 -m unittest discover -s tests` | PASS, 22 tests |
+| Native workspace all-feature locked/offline tests | PASS, 29 tests |
+| Native rustfmt and all-target/all-feature Clippy `-D warnings` | PASS |
+| Generated zero/one/two/Hello+Workshop packs | PASS, four scratch compositions |
+| Independent author template | PASS, API-only tests and Clippy |
+| Source recipe verify and feature-off dependency boundary | PASS |
+| Source ZIP roundtrip, repeated byte equality, checksums, license/notices inclusion | PASS; exported sources rebuild/test with a separate exact engine checkout |
+| New independent recursive local clone | PASS; gitlink/lock/checkout, feature-off graph, outer audit and both `git fsck --full` checks; private/local files absent |
+| Horizon vanilla client lib/game/ctl | PASS: 669 + 153 + 18; 21 lib + 3 game tests ignored |
+| Horizon native + Workshop lib/game/ctl | PASS: 677 + 160 + 18; same ignores |
+| Combined WASM/native + Workshop lib/game/ctl | PASS: 677 + 163 + 18; same ignores |
+| Sequential renderer suite | PASS: 526, 15 ignored |
+| Original WASM `runtime,pack` | PASS: 22 unit + 4 API reference + 32 real sandbox; 1 performance test ignored |
+| Archived-workflow contract modules | PASS: 45 tests, no assertion removed |
+| Full upstream Python tooling suite after fixture-path correction | PASS: 416 tests |
+| Upstream public-tree/history guard | PASS across all local refs |
+| GitHub CI/community YAML and local README/community links | PASS |
+
+The first socket-dependent client/renderer runs failed with sandbox `EPERM`
+(6 client library tests per variant, 2 renderer HTTP fixtures). The same suites
+passed with local sockets permitted and isolated temporary homes. No player
+resources were used. The initial upstream Python tooling run exposed 7 missing
+workflow fixture paths after archiving; the two path updates fixed those errors.
+
+The installed `stable` alias reports the exact rustc/Cargo 1.99.1 identities in
+the source lock. Local checks used `RUSTUP_TOOLCHAIN=stable` after the separately
+named `1.99.1` toolchain attempted an unavailable local installation. CI explicitly
+installs the named version. No toolchain download success is claimed locally.
+
+**Not run / pending:** public anonymous GitHub recursive clone and hosted Actions
+(repositories/push not authorized); actionlint (not installed); fresh asset-based
+game scenarios and Java differential parity (no gameplay/Rust changes in this
+step, no proprietary resources used). Prior phase acceptance remains historical
+evidence in `native-modding/PHASE4_VALIDATION.md`.

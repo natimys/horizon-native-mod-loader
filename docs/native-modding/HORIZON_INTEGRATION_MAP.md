@@ -1,5 +1,25 @@
 # Horizon integration map
 
+## Publication preparation — 2026-10-30
+
+Plan/scope: expose no new engine hooks or API. Preserve the integration ancestry;
+prepare fork metadata and prevent inherited upstream automation from executing.
+After relocating workflows, retain their original contract tests by pointing the
+two workflow-reading test modules at the archived files. No adapter can avoid a
+test fixture path update when the workflow location changes.
+
+| File | Entry point | Reason | Alternative considered | Test |
+|---|---|---|---|---|
+| `horizon/README.md`, `FORK.md` | fork entry documentation | identify independent fork, attribution and outer build layout | leaving upstream-only presentation misidentifies downstream builds | local links; original LICENSE/AGENTS/CONTRIBUTING retained |
+| `horizon/.gitignore` | local operator note | keep pre-existing untracked note local | staging it is outside publication scope | clean clone excludes file |
+| `horizon/.github/{workflows,upstream-workflows}` | workflow discovery | archive upstream release/deploy/private-runner workflows unchanged | restoring them would run automation outside this fork's purpose | 14 byte-identical relocations; outer CI owns engine matrix |
+| `horizon/tests/test_nightly.py`, `test_triage_command.py` | archived workflow fixtures | preserve upstream automation contract assertions after relocation | deleting/skipping these tests would lose coverage | targeted modules; full Python tooling suite |
+
+Publication preparation changes no Rust engine source, gameplay behavior, Mod API,
+WASM loader, save format or renderer. The source lock and submodule gitlink advance
+together after each fork preparation commit. Public availability is a separate
+gate: publish the dependency first only after owner authorization.
+
 Audited 2026-10-30 against local checkout (observations, not assumptions).
 Initial status: only untracked `horizon_official_server.txt`; preserve it.
 `gh pr list --state open --search 'native mod'` could not reach api.github.com.
