@@ -486,3 +486,17 @@ was changed. Source-only baseline comparison used a temporary Git archive,
 without private resources or personal saves. All actual games used scratch homes.
 Root tooling: 9ad817f; the outer stage starts at d46c5f3. No push. Next smallest
 roadmap stage is phase 4; no Create work was performed.
+
+## Phase 4 audit — ecosystem/toolchain
+
+Observed at Horizon f84396c94: optional pack path in
+`crates/horizon-client/Cargo.toml` is `../../../native-mods/pack`;
+`game/native_api.rs` and `native_content.rs` consume generic runtime/catalog data.
+`native-mods/pack/src/lib.rs::{create_runtime,create_for_side}` is the existing
+composition boundary. `API_VERSION = 1` is independent of the API crate's 0.1.0
+source version. PHASE3_VALIDATION.md records client/server/save/network acceptance.
+Phase 4 needs only developer tooling around these boundaries. See PHASE4_PLAN.md.
+
+| File / entry point | Reason | Alternative considered | Test |
+|---|---|---|---|
+| No engine insertion proposed | Existing path dependency and pack constructors accept generated composition | New engine settings/branches have no concrete need | Rebuild and test off/on using generated pack; graph and lifecycle checks |
