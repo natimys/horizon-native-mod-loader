@@ -23,11 +23,12 @@ class ReleaseTests(unittest.TestCase):
         self.write("native-modpack.lock", "{}")
         self.write("LICENSE", "MIT synthetic test notice")
         self.write("THIRD_PARTY_NOTICES.md", "Synthetic test attribution")
+        self.write("docs/PUBLICATION_AUDIT.md", "Synthetic source publication audit")
         self.write("tools/check_native_boundaries.py", "# architectural guard")
         self.write("native-modpack.toml", "schema = 1")
         self.write("game-resources/private.txt", "PRIVATE")
         self.write("native-mods/target/secret", "BUILD OUTPUT")
-        subprocess.run(["git", "add", "native-mods/api", "native-modpack.lock", "native-modpack.toml", "tools/check_native_boundaries.py", "LICENSE", "THIRD_PARTY_NOTICES.md"], cwd=self.root, check=True)
+        subprocess.run(["git", "add", "native-mods/api", "native-modpack.lock", "native-modpack.toml", "tools/check_native_boundaries.py", "LICENSE", "THIRD_PARTY_NOTICES.md", "docs/PUBLICATION_AUDIT.md"], cwd=self.root, check=True)
         subprocess.run(["git", "-c", "user.name=Test", "-c", "user.email=test@example.invalid", "commit", "-qm", "fixture"], cwd=self.root, check=True)
 
     def write(self, name, text):
@@ -46,6 +47,7 @@ class ReleaseTests(unittest.TestCase):
             self.assertIn("tools/check_native_boundaries.py", archive.namelist())
             self.assertEqual(archive.read("LICENSE"), b"MIT synthetic test notice")
             self.assertIn("THIRD_PARTY_NOTICES.md", archive.namelist())
+            self.assertIn("docs/PUBLICATION_AUDIT.md", archive.namelist())
             self.assertFalse(any("private" in n or "target" in n for n in archive.namelist()))
             for line in archive.read("SHA256SUMS").decode().splitlines():
                 expected, name = line.split("  ", 1)

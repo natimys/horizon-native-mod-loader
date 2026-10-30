@@ -80,7 +80,7 @@ def verify(root=ROOT):
 
 
 def package_files(root):
-    names = tracked(root, "native-mods", "docs/native-modding", "tools/native*.py",
+    names = tracked(root, "native-mods", "docs", "tools/native*.py",
                     "tests/test_native*.py", "tools/check_native_boundaries.py", ".github/workflows/native.yml",
                     "native-modpack.toml", LOCK, "LICENSE", "THIRD_PARTY_NOTICES.md",
                     "README.md", "CONTRIBUTING.md", "SECURITY.md", "CODE_OF_CONDUCT.md",
