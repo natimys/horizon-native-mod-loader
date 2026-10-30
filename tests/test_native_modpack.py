@@ -57,6 +57,7 @@ class GeneratorTests(unittest.TestCase):
         for before, after in [('version = "0.1.0"', 'version = "*"'),
                               ('native-mods/mods/hello', 'native-mods/mods/../api'),
                               ('feature = "test-pack"', 'feature = "default"'),
+                              ('horizon-native-hello-mod', 'horizon-native-runtime'),
                               ('horizon-native-hello-mod', 'horizon-client')]:
             with self.subTest(after=after):
                 self.path.write_text(original.replace(before, after))
@@ -64,6 +65,23 @@ class GeneratorTests(unittest.TestCase):
                     pack.recipe(self.path, self.root)
         self.path.write_text(original + original[original.index('[[mods]]'):original.index('[[mods]]', original.index('[[mods]]') + 1)])
         with self.assertRaisesRegex(pack.PackError, "duplicate"):
+            pack.recipe(self.path, self.root)
+
+    def test_normalized_crate_collision_and_manifest_symlink(self):
+        source = self.root / "native-mods/mods/hello/Cargo.toml"
+        saved = source.read_text()
+        other = self.root / "native-mods/mods/alias"
+        other.mkdir()
+        (other / "Cargo.toml").write_text(saved.replace("horizon-native-hello-mod", "horizon_native_hello_mod"))
+        self.path.write_text(self.path.read_text() + '\n[[mods]]\npackage = "horizon_native_hello_mod"\npath = "native-mods/mods/alias"\nversion = "0.1.0"\n')
+        with self.assertRaisesRegex(pack.PackError, "collide"):
+            pack.recipe(self.path, self.root)
+        self.path.write_bytes((ROOT / "native-modpack.toml").read_bytes())
+        source.unlink()
+        target = self.root / "manifest.toml"
+        target.write_text(saved)
+        source.symlink_to(target)
+        with self.assertRaisesRegex(pack.PackError, "symlink Cargo.toml"):
             pack.recipe(self.path, self.root)
 
     def test_symlink_refused(self):

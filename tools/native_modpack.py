@@ -7,7 +7,7 @@ import re
 import tomllib
 
 ROOT = Path(__file__).resolve().parents[1]
-NAME = re.compile(r"[a-z][a-z0-9]*(?:-[a-z0-9]+)*\Z")
+NAME = re.compile(r"[a-z][a-z0-9_-]*\Z")
 VERSION = re.compile(r"[0-9]+\.[0-9]+\.[0-9]+\Z")
 
 
@@ -43,15 +43,21 @@ def recipe(path, root=ROOT):
     mods = data.get("mods", [])
     if not isinstance(mods, list):
         raise PackError("mods must be an array of tables")
-    packages, paths = set(), set()
+    packages, paths, aliases = set(), set(), set()
     for mod in mods:
         keys(mod, {"package", "path", "version", "feature", "features"},
              {"package", "path", "version"}, "mod")
         package = mod["package"]
         if not isinstance(package, str) or not NAME.fullmatch(package):
             raise PackError("invalid Cargo package name")
+        if package in {"horizon-native-api", "horizon-native-runtime", "horizon-native-ui", "horizon-native-pack"}:
+            raise PackError("mod package uses a reserved native layer name")
         if package in packages:
             raise PackError(f"duplicate package: {package}")
+        alias = package.replace("-", "_")
+        if alias in aliases:
+            raise PackError("mod packages collide as Rust crate names")
+        aliases.add(alias)
         packages.add(package)
         value = mod["path"]
         if not isinstance(value, str) or not value.startswith("native-mods/mods/"):
@@ -65,6 +71,8 @@ def recipe(path, root=ROOT):
         if resolved in paths:
             raise PackError("duplicate mod path")
         paths.add(resolved)
+        if (resolved / "Cargo.toml").is_symlink():
+            raise PackError("symlink Cargo.toml is unsupported")
         meta = read_toml(resolved / "Cargo.toml")["package"]
         if meta.get("name") != package or meta.get("version") != mod["version"]:
             raise PackError(f"{package}: package/version differs from Cargo.toml")

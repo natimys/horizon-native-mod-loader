@@ -44,7 +44,7 @@
     "native-mods/ui/src/lib.rs": "450869039addde2eb8c06025f5bfe5393d2649bb4ca35e737db5b52900db3615",
     "native-mods/ui/tests/catalog.rs": "152ee08c464ac1f1ced65d3c09efd8843c07f9b5873ecf4861e32292d81a4fb9",
     "tools/check_native_boundaries.py": "78afb8759840f1dd03299ff3fa8917fcec03774499dd1d65daa7f16445372871",
-    "tools/native_modpack.py": "79977442d573f6867bd828da3f3bb1a8d434a0661fad84f9bb62d582cb19973e",
+    "tools/native_modpack.py": "b9c00c86494c2f6a673c2b424606b6485eca3635f4bfa41baed307507c5f610d",
     "tools/native_pack_release.py": "1b2cbda24e2462f2f19091acf868518d914ab5d4779f57f969cbd62f6c7c20b5"
   }
 }
